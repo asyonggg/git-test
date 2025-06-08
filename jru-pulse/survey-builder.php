@@ -26,7 +26,7 @@
         }
         
         .sidebar-collapsed {
-            width: 4rem;
+            width: 5rem;
         }
         
         .sidebar-expanded {
@@ -453,6 +453,55 @@
     </div>
 
     <script>
+        // Sidebar toggle functionality
+        const sidebar = document.getElementById('sidebar');
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const logoContainer = document.getElementById('logoContainer');
+        const menuTexts = document.querySelectorAll('.menu-text');
+        
+        let sidebarCollapsed = false;
+        
+        sidebarToggle.addEventListener('click', function() {
+            sidebarCollapsed = !sidebarCollapsed;
+            
+            if (sidebarCollapsed) {
+                sidebar.classList.remove('sidebar-expanded');
+                sidebar.classList.add('sidebar-collapsed');
+                
+                menuTexts.forEach(text => {
+                    text.style.opacity = '0';
+                    setTimeout(() => {
+                        text.style.display = 'none';
+                    }, 150);
+                });
+                
+                logoContainer.style.opacity = '0';
+                setTimeout(() => {
+                    logoContainer.style.display = 'none';
+                }, 150);
+                
+            } else {
+                sidebar.classList.remove('sidebar-collapsed');
+                sidebar.classList.add('sidebar-expanded');
+                
+                setTimeout(() => {
+                    menuTexts.forEach(text => {
+                        text.style.display = 'block';
+                        setTimeout(() => {
+                            text.style.opacity = '1';
+                        }, 50);
+                    });
+                    
+                    logoContainer.style.display = 'flex';
+                    setTimeout(() => {
+                        logoContainer.style.opacity = '1';
+                    }, 50);
+                }, 150);
+            }
+        });
+
+
+
         // Survey Builder State
         let surveyQuestions = [];
         let currentEditingQuestion = null;
@@ -907,52 +956,7 @@
         // Initialize the application
         document.addEventListener('DOMContentLoaded', initializeSurveyBuilder);
 
-        // Sidebar toggle functionality
-        const sidebar = document.getElementById('sidebar');
-        const sidebarToggle = document.getElementById('sidebarToggle');
-        const logoContainer = document.getElementById('logoContainer');
-        const menuTexts = document.querySelectorAll('.menu-text');
         
-        let sidebarCollapsed = false;
-        
-        sidebarToggle.addEventListener('click', function() {
-            sidebarCollapsed = !sidebarCollapsed;
-            
-            if (sidebarCollapsed) {
-                sidebar.classList.remove('sidebar-expanded');
-                sidebar.classList.add('sidebar-collapsed');
-                
-                menuTexts.forEach(text => {
-                    text.style.opacity = '0';
-                    setTimeout(() => {
-                        text.style.display = 'none';
-                    }, 150);
-                });
-                
-                logoContainer.style.opacity = '0';
-                setTimeout(() => {
-                    logoContainer.style.display = 'none';
-                }, 150);
-                
-            } else {
-                sidebar.classList.remove('sidebar-collapsed');
-                sidebar.classList.add('sidebar-expanded');
-                
-                setTimeout(() => {
-                    menuTexts.forEach(text => {
-                        text.style.display = 'block';
-                        setTimeout(() => {
-                            text.style.opacity = '1';
-                        }, 50);
-                    });
-                    
-                    logoContainer.style.display = 'flex';
-                    setTimeout(() => {
-                        logoContainer.style.opacity = '1';
-                    }, 50);
-                }, 150);
-            }
-        });
     </script>
 </body>
 </html>

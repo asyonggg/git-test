@@ -100,7 +100,7 @@
                         </a>
                     </li>
                     <li>
-                        <a href="survey-management.php" class="flex items-center px-3 py-3 bg-blue-50 text-jru-blue rounded-lg font-medium">
+                        <a href="survey-management.php" class="flex items-center px-3 py-3 bg-blue-50 text-jru-blue rounded-lg font-medium"> 
                             <i class="fas fa-poll text-lg w-6"></i>
                             <span class="menu-text ml-3">Survey Management</span>
                         </a>
@@ -132,7 +132,7 @@
                         Quick Actions
                     </div>
                     <div class="space-y-2">
-                        <button class="flex items-center w-full px-3 py-2 text-sm text-gray-50 hover:bg-gray-600 rounded-lg transition-colors">
+                        <button id="quickNewSurvey" class="flex items-center w-full px-3 py-2 text-sm text-gray-50 hover:bg-gray-600 rounded-lg transition-colors">
                             <i class="fas fa-plus text-sm w-6"></i>
                             <span class="menu-text ml-3">New Survey</span>
                         </button>
@@ -454,7 +454,7 @@
     </div>
 
     <script>
-                // Sidebar toggle functionality
+              // Sidebar toggle functionality
         const sidebar = document.getElementById('sidebar');
         const sidebarToggle = document.getElementById('sidebarToggle');
         const logoContainer = document.getElementById('logoContainer');
@@ -506,6 +506,7 @@
                 }, 150);
             }
         });
+          
         
 
         // Global state
@@ -984,18 +985,7 @@
             // Implement search functionality
         }
 
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const isExpanded = sidebar.classList.contains('sidebar-expanded');
-            
-            if (isExpanded) {
-                sidebar.classList.remove('sidebar-expanded');
-                sidebar.classList.add('sidebar-collapsed');
-            } else {
-                sidebar.classList.remove('sidebar-collapsed');
-                sidebar.classList.add('sidebar-expanded');
-            }
-        }
+       
     </script>
 </body>
 </html>
