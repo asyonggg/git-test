@@ -295,6 +295,7 @@
                             <div class="p-6">
                                 <div id="officesList" class="space-y-3">
                                     <!-- Offices will be loaded here -->
+                                    <div class="text-gray-500">Loading offices...</div>
                                 </div>
                             </div>
                         </div>
@@ -621,30 +622,29 @@
 
         // Data Loading Functions
         async function loadOffices() {
-            try {
-                const response = await fetch('/api/offices.php');
-                const result = await response.json();
-                if (result.success) {
-                    offices = result.data;
-                }
-            } catch (error) {
-                console.error('Error loading offices:', error);
-                // Use fallback data for demo
-                offices = [
-                    {id: 1, name: "Registrar's Office", code: "REG"},
-                    {id: 2, name: "Student Accounts Office", code: "SAO"},
-                    {id: 3, name: "Cashier", code: "CASH"},
-                    {id: 4, name: "Library", code: "LIB"},
-                    {id: 5, name: "Information Technology Office", code: "IT"},
-                    {id: 6, name: "Medical & Dental Clinic", code: "MED"},
-                    {id: 7, name: "Guidance & Testing Office", code: "GTO"},
-                    {id: 8, name: "Student Development Office", code: "SDO"},
-                    {id: 9, name: "Athletics Office", code: "ATH"},
-                    {id: 10, name: "Customer Advocacy Office", code: "CAO"},
-                    {id: 11, name: "Engineering and Maintenance Office", code: "EMO"}
-                ];
+        try {
+            const response = await fetch('/api/offices.php'); // <-- Explicitly disable caching
+            const result = await response.json();
+            if (result.success) {
+                offices = result.data;
+             //   renderOffices();
             }
+        } catch (error) {
+            console.error('Error loading offices:', error);
+            offcies = [
+                {id: 1, name: "Registrar's Office", code: "REG"},
+                {id: 2, name: "Student Accounts Office", code: "SAO"},
+                {id: 3, name: "Cashier Office", code: "CSO"},
+                {id: 4, name: "Library Office", code: "LIB"},
+                {id: 5, name: "Information Technology Office", code: "ITO"},
+                {id: 6, name: "Medical & Dental Clinic Office", code: "MDCO"},
+                {id: 7, name: "Guidance & Testing Office", code: "GTO"},
+                {id: 8, name: "Student Development Office", code: "SDO"},
+                {id: 9, name: "Athletics Office", code: "ATHO"},
+                {id: 10, name: "Customer Advocacy Office", code: "CAO"},
+                {id: 11, name: "Engineering and Maintenance Office", code: "EMO"},
         }
+    }
 
         async function loadServices() {
             try {
@@ -655,7 +655,7 @@
                 }
             } catch (error) {
                 console.error('Error loading services:', error);
-                // Use fallback data for demo
+                // Use fallback data for demo, id 1-11 are services for offices 1-11, office_id is the id of the office(Foreign key)
                 services = [
                     {id: 1, office_id: 1, name: "Document request", code: "document-request"},
                     {id: 2, office_id: 2, name: "Onsite inquiry", code: "onsite-inquiry"},
@@ -669,7 +669,23 @@
                     {id: 10, office_id: 5, name: "Online Inquiry / Technical assistance", code: "online-tech-assistance"},
                     {id: 11, office_id: 5, name: "Face-To-Face inquiry assistance", code: "face-to-face-tech"},
                     {id: 12, office_id: 5, name: "Technical Assistance during events", code: "event-tech-support"},
-                    {id: 13, office_id: 5, name: "Classroom/Office Technical Assistance", code: "classroom-tech-support"}
+                    {id: 13, office_id: 5, name: "Classroom/Office Technical Assistance", code: "classroom-tech-support"},
+                    {id: 14, office_id: 6, name: "Medical Check-up/Consultation", code: "medical-checkup"},
+                    {id: 15, office_id: 6, name: "Dental Check-up/Consultation", code: "dental-checkup"},
+                    {id: 16, office_id: 6, name: "Request for medical clearances", code: "request-medical-clearance"},
+                    {id: 17, office_id: 7, name: "Request for Good Moral Certificate", code: "request-good-moral"},
+                    {id: 18, office_id: 7, name:"Request for Counseling", code: "request-counseling"},
+                    {id: 19, office_id: 7, name: "Scholarship Inquiry", code: "scholarship-inquiry"},
+                    {id: 20, office_id: 8, name: "Filling of complaint", code: "filling-complaint"},
+                    {id: 21, office_id: 8, name: "Request for ID Replacement Form", code: "request-id-replacement-form"},
+                    {id: 22, office_id: 8, name: "Request for Admission Admission Slip", code: "request-admission-slip"},
+                    {id: 23, office_id: 8, name: "Request for Temporary School ID", code: "request-temporary-school-id"},
+                    {id: 24, office_id: 9, name: "Borrowing of Sports Equipment", code: "borrowing-sports-equipment"},
+                    {id: 25, office_id: 10, name: "General Inquiries", code: "general-inquiries"},
+                    {id: 26, office_id: 11, name: "Request for Vehicle", code: "request-vehicle"},
+                    {id: 27, office_id: 11, name: "Facility Maintenance", code: "facility-maintenance"},
+                    {id: 28, office_id: 11, name: "Auditorium Reservation", code: "auditorium-reservation"},
+
                 ];
             }
         }
@@ -849,6 +865,7 @@
         }
 
         async function handleAddOffice(e) {
+
             e.preventDefault();
             
             const newOffice = {
@@ -857,16 +874,31 @@
                 description: document.getElementById('newOfficeDescription').value
             };
 
-            // Add to local array for demo
-            offices.push({
-                id: offices.length + 1,
-                ...newOffice
-            });
+            try {
+                const response = await fetch("api/offices.php", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(newOffice)
+                });
 
-            renderOffices();
-            populateOfficeSelects();
-            closeAddOfficeModal();
-            alert('Office added successfully!');
+                const result = await response.json();
+                if (result.success) {
+                    alert("Office added successfully!");
+
+                    await loadOffices();
+                    populateOfficeSelects();
+                    closeAddOfficeModal();
+
+                } else {
+                    alert("Error adding office: " + result.message);
+                }
+            }   catch (error) {
+                console.error('Error submitting form:', error);
+                alert('A network error occurred. Please try again.' + error.message);
+            }
+            
         }
 
         async function handleAddService(e) {

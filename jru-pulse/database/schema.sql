@@ -1,0 +1,27 @@
+CREATE DATABASE jru_pulse; --database
+
+
+--office table
+CREATE TABLE offices (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(200) NOT NULL,
+    code VARCHAR(50) UNIQUE NOT NULL,
+    description TEXT,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+--services PK ofc_id
+CREATE TABLE services (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    office_id INT NOT NULL,
+    name VARCHAR(300) NOT NULL,
+    code VARCHAR(100) NOT NULL,
+    description TEXT,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (office_id) REFERENCES offices(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_service_code (office_id, code)
+);
