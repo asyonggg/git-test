@@ -172,7 +172,7 @@ if ($authenticated_user_details['role'] === 'office_head' && isset($authenticate
 
 // 11. Redirect based on role
 if ($authenticated_user_details['role'] === 'admin') {
-    header('Location: admin-dashboard.php'); // Consistent naming convention
+    header('Location: dashboard.php'); // Consistent naming convention
     exit;
 } elseif ($authenticated_user_details['role'] === 'office_head') {
     header('Location: office_head_dashboard.php');
