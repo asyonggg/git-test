@@ -292,10 +292,13 @@
                                     <i class="fas fa-plus mr-1"></i>Add Office
                                 </button>
                             </div>
+                            <div id="openOfficeEditModal" class="">
+                                
+                            </div>
                             <div class="p-6">
                                 <div id="officesList" class="space-y-3">
                                     <!-- Offices will be loaded here -->
-                                    <div class="text-gray-500">Loading offices...</div>
+                                    
                                 </div>
                             </div>
                         </div>
@@ -382,6 +385,8 @@
         </div>
     </div>
 
+    
+
     <!-- Add Office Modal -->
     <div id="addOfficeModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
         <div class="flex items-center justify-center min-h-screen p-4">
@@ -408,6 +413,40 @@
                         <div class="flex justify-end space-x-4 mt-6">
                             <button type="button" id="cancelAddOffice" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg">Cancel</button>
                             <button type="submit" class="px-4 py-2 bg-jru-blue text-white rounded-lg">Add Office</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Office Modal -->
+    <div id="editOfficeModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-xl shadow-xl max-w-md w-full">
+                <div class="p-6 border-b border-gray-200">
+                    <h2 class="text-xl font-bold text-gray-900">Edit Office</h2>
+                </div>
+                <div class="p-6">
+                    <form id="editOfficeForm">
+                        <input type="hidden" id="editOfficeId">
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Office Name</label>
+                                <input type="text" id="editOfficeName" class="w-full px-4 py-2 border border-gray-300 rounded-lg" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Office Code</label>
+                                <input type="text" id="editOfficeCode" class="w-full px-4 py-2 border border-gray-300 rounded-lg" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                                <textarea id="editOfficeDescription" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg"></textarea>
+                            </div>
+                        </div>
+                        <div class="flex justify-end space-x-4 mt-6">
+                            <button type="button" id="cancelEditOfficeModal" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg">Cancel</button>
+                            <button type="submit" class="px-4 py-2 bg-jru-blue text-white rounded-lg">Save Changes</button>
                         </div>
                     </form>
                 </div>
@@ -454,570 +493,52 @@
         </div>
     </div>
 
-    <script>
-              // Sidebar toggle functionality
-        const sidebar = document.getElementById('sidebar');
-        const sidebarToggle = document.getElementById('sidebarToggle');
-        const logoContainer = document.getElementById('logoContainer');
-        const menuTexts = document.querySelectorAll('.menu-text');
-        const userInfo = document.getElementById('userInfo');
-        const quickActionsHeader = document.getElementById('quickActionsHeader');
-
-        let sidebarCollapsed = false;
-
-        sidebarToggle.addEventListener('click', function() {
-            sidebarCollapsed = !sidebarCollapsed;
-            
-            if (sidebarCollapsed) {
-                sidebar.classList.remove('sidebar-expanded');
-                sidebar.classList.add('sidebar-collapsed');
-                
-                // Hide text elements
-                menuTexts.forEach(text => {
-                    text.style.opacity = '0';
-                    setTimeout(() => {
-                        text.style.display = 'none';
-                    }, 150);
-                });
-                
-                // Hide logo
-                logoContainer.style.opacity = '0';
-                setTimeout(() => {
-                    logoContainer.style.display = 'none';
-                }, 150);
-                
-            } else {
-                sidebar.classList.remove('sidebar-collapsed');
-                sidebar.classList.add('sidebar-expanded');
-                
-                // Show text elements
-                setTimeout(() => {
-                    menuTexts.forEach(text => {
-                        text.style.display = 'block';
-                        setTimeout(() => {
-                            text.style.opacity = '1';
-                        }, 50);
-                    });
-                    
-                    // Show logo
-                    logoContainer.style.display = 'flex';
-                    setTimeout(() => {
-                        logoContainer.style.opacity = '1';
-                    }, 50);
-                }, 150);
-            }
-        });
-          
-        
-
-        // Global state
-        let offices = [];
-        let services = [];
-        let surveys = [];
-        let currentTab = 'surveys';
-
-        // Initialize the application
-        document.addEventListener('DOMContentLoaded', function() {
-            initializeApp();
-            setupEventListeners();
-        });
-
-        async function initializeApp() {
-            await loadOffices();
-            await loadServices();
-            await loadSurveys();
-            updateStatistics();
-            populateOfficeSelects();
-        }
-
-        function setupEventListeners() {
-            // Tab switching
-            document.getElementById('surveysTab').addEventListener('click', () => switchTab('surveys'));
-            document.getElementById('officesTab').addEventListener('click', () => switchTab('offices'));
-
-            // Survey creation
-            const createSurveyBtn = document.getElementById('createSurveyBtn');
-            if (createSurveyBtn) {
-                createSurveyBtn.addEventListener('click', function(e) {
-                    console.log('Create Survey button clicked');
-                    e.preventDefault();
-                    openCreateSurveyModal();
-                });
-            }
-
-            // Survey creation - Quick action button
-            const quickNewSurvey = document.getElementById('quickNewSurvey');
-            if (quickNewSurvey) {
-                quickNewSurvey.addEventListener('click', function(e) {
-                    console.log('Quick New Survey button clicked');
-                    e.preventDefault();
-                    openCreateSurveyModal();
-                });
-            }
-            
-            // Modal close buttons
-            const closeCreateModal = document.getElementById('closeCreateModal');
-            if (closeCreateModal) {
-                closeCreateModal.addEventListener('click', function(e) {
-                    console.log('Close modal X button clicked');
-                    e.preventDefault();
-                    closeCreateSurveyModal();
-                });
-            }
-            
-            const cancelCreate = document.getElementById('cancelCreate');
-            if (cancelCreate) {
-                cancelCreate.addEventListener('click', function(e) {
-                    console.log('Cancel button clicked');
-                    e.preventDefault();
-                    closeCreateSurveyModal();
-                });
-            }
-            document.getElementById('createSurveyForm').addEventListener('submit', handleCreateSurvey);
-
-            // Office/Service management
-            document.getElementById('addOfficeBtn').addEventListener('click', openAddOfficeModal);
-            document.getElementById('addServiceBtn').addEventListener('click', openAddServiceModal);
-            document.getElementById('cancelAddOffice').addEventListener('click', closeAddOfficeModal);
-            document.getElementById('cancelAddService').addEventListener('click', closeAddServiceModal);
-            document.getElementById('addOfficeForm').addEventListener('submit', handleAddOffice);
-            document.getElementById('addServiceForm').addEventListener('submit', handleAddService);
-
-            // Office selection for services
-            document.getElementById('newSurveyOffice').addEventListener('change', handleOfficeChange);
-            document.getElementById('officeFilter').addEventListener('change', filterServices);
-
-            // Sidebar toggle
-            document.getElementById('sidebarToggle').addEventListener('click', toggleSidebar);
-
-            // Search
-            document.getElementById('searchInput').addEventListener('input', handleSearch);
-        }
-
-        // Tab Management
-        function switchTab(tab) {
-            currentTab = tab;
-            
-            // Update tab buttons
-            document.querySelectorAll('.tab-button').forEach(btn => {
-                btn.classList.remove('active', 'border-jru-blue', 'text-jru-blue');
-                btn.classList.add('border-transparent', 'text-gray-500');
-            });
-            
-            document.getElementById(tab + 'Tab').classList.add('active', 'border-jru-blue', 'text-jru-blue');
-            document.getElementById(tab + 'Tab').classList.remove('border-transparent', 'text-gray-500');
-            
-            // Show/hide content
-            document.querySelectorAll('.tab-content').forEach(content => {
-                content.classList.add('hidden');
-            });
-            
-            document.getElementById(tab + 'Content').classList.remove('hidden');
-            
-            if (tab === 'offices') {
-                renderOffices();
-                renderServices();
-            }
-        }
-
-        // Data Loading Functions
-        async function loadOffices() {
-        try {
-            const response = await fetch('/api/offices.php'); // <-- Explicitly disable caching
-            const result = await response.json();
-            if (result.success) {
-                offices = result.data;
-             //   renderOffices();
-            }
-        } catch (error) {
-            console.error('Error loading offices:', error);
-            offcies = [
-                {id: 1, name: "Registrar's Office", code: "REG"},
-                {id: 2, name: "Student Accounts Office", code: "SAO"},
-                {id: 3, name: "Cashier Office", code: "CSO"},
-                {id: 4, name: "Library Office", code: "LIB"},
-                {id: 5, name: "Information Technology Office", code: "ITO"},
-                {id: 6, name: "Medical & Dental Clinic Office", code: "MDCO"},
-                {id: 7, name: "Guidance & Testing Office", code: "GTO"},
-                {id: 8, name: "Student Development Office", code: "SDO"},
-                {id: 9, name: "Athletics Office", code: "ATHO"},
-                {id: 10, name: "Customer Advocacy Office", code: "CAO"},
-                {id: 11, name: "Engineering and Maintenance Office", code: "EMO"},
-        }
-    }
-
-        async function loadServices() {
-            try {
-                const response = await fetch('/api/services.php');
-                const result = await response.json();
-                if (result.success) {
-                    services = result.data;
-                }
-            } catch (error) {
-                console.error('Error loading services:', error);
-                // Use fallback data for demo, id 1-11 are services for offices 1-11, office_id is the id of the office(Foreign key)
-                services = [
-                    {id: 1, office_id: 1, name: "Document request", code: "document-request"},
-                    {id: 2, office_id: 2, name: "Onsite inquiry", code: "onsite-inquiry"},
-                    {id: 3, office_id: 2, name: "Online inquiry", code: "online-inquiry"},
-                    {id: 4, office_id: 3, name: "Onsite Payment", code: "onsite-payment"},
-                    {id: 5, office_id: 4, name: "Online Library Services (Email, social media platforms)", code: "online-library-services"},
-                    {id: 6, office_id: 4, name: "Face-to-Face Library Services", code: "face-to-face-library"},
-                    {id: 7, office_id: 4, name: "Borrowing of printed materials", code: "borrowing-materials"},
-                    {id: 8, office_id: 4, name: "Online Library Instructions", code: "online-instructions"},
-                    {id: 9, office_id: 4, name: "Participation on Library activities and programs", code: "library-activities"},
-                    {id: 10, office_id: 5, name: "Online Inquiry / Technical assistance", code: "online-tech-assistance"},
-                    {id: 11, office_id: 5, name: "Face-To-Face inquiry assistance", code: "face-to-face-tech"},
-                    {id: 12, office_id: 5, name: "Technical Assistance during events", code: "event-tech-support"},
-                    {id: 13, office_id: 5, name: "Classroom/Office Technical Assistance", code: "classroom-tech-support"},
-                    {id: 14, office_id: 6, name: "Medical Check-up/Consultation", code: "medical-checkup"},
-                    {id: 15, office_id: 6, name: "Dental Check-up/Consultation", code: "dental-checkup"},
-                    {id: 16, office_id: 6, name: "Request for medical clearances", code: "request-medical-clearance"},
-                    {id: 17, office_id: 7, name: "Request for Good Moral Certificate", code: "request-good-moral"},
-                    {id: 18, office_id: 7, name:"Request for Counseling", code: "request-counseling"},
-                    {id: 19, office_id: 7, name: "Scholarship Inquiry", code: "scholarship-inquiry"},
-                    {id: 20, office_id: 8, name: "Filling of complaint", code: "filling-complaint"},
-                    {id: 21, office_id: 8, name: "Request for ID Replacement Form", code: "request-id-replacement-form"},
-                    {id: 22, office_id: 8, name: "Request for Admission Admission Slip", code: "request-admission-slip"},
-                    {id: 23, office_id: 8, name: "Request for Temporary School ID", code: "request-temporary-school-id"},
-                    {id: 24, office_id: 9, name: "Borrowing of Sports Equipment", code: "borrowing-sports-equipment"},
-                    {id: 25, office_id: 10, name: "General Inquiries", code: "general-inquiries"},
-                    {id: 26, office_id: 11, name: "Request for Vehicle", code: "request-vehicle"},
-                    {id: 27, office_id: 11, name: "Facility Maintenance", code: "facility-maintenance"},
-                    {id: 28, office_id: 11, name: "Auditorium Reservation", code: "auditorium-reservation"},
-
-                ];
-            }
-        }
-
-        async function loadSurveys() {
-            try {
-                const response = await fetch('/api/surveys.php');
-                const result = await response.json();
-                if (result.success) {
-                    surveys = result.data;
-                    renderSurveys();
-                }
-            } catch (error) {
-                console.error('Error loading surveys:', error);
-                surveys = []; // Empty for demo
-                renderSurveys();
-            }
-        }
-
-        // Rendering Functions
-        function renderSurveys() {
-            const tbody = document.getElementById('surveysTableBody');
-            
-            if (surveys.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="7" class="px-6 py-8 text-center text-gray-500">
-                            <div class="flex flex-col items-center">
-                                <i class="fas fa-poll text-4xl text-gray-300 mb-4"></i>
-                                <p class="text-lg font-medium">No surveys found</p>
-                                <p class="text-sm">Create your first survey to get started</p>
-                                <button onclick="openCreateSurveyModal()" class="mt-4 bg-jru-blue text-white px-4 py-2 rounded-lg">
-                                    Create Survey
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-                return;
-            }
-
-            tbody.innerHTML = surveys.map(survey => {
-                const office = offices.find(o => o.id == survey.office_id);
-                const service = services.find(s => s.id == survey.service_id);
-                
-                return `
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-6 py-4">
-                            <div>
-                                <div class="text-sm font-medium text-gray-900">${survey.title}</div>
-                                <div class="text-sm text-gray-500">${survey.description || 'No description'}</div>
-                            </div>
-                        </td>
-                        <td class="px-6 py-4 text-sm text-gray-900">${office ? office.name : 'Unknown'}</td>
-                        <td class="px-6 py-4 text-sm text-gray-900">${service ? service.name : 'Unknown'}</td>
-                        <td class="px-6 py-4">
-                            <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusClass(survey.status)}">
-                                ${survey.status}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 text-sm text-gray-900">${survey.response_count || 0}</td>
-                        <td class="px-6 py-4 text-sm text-gray-500">${formatDate(survey.created_at)}</td>
-                        <td class="px-6 py-4 text-sm font-medium">
-                            <div class="flex space-x-2">
-                                <button onclick="editSurvey(${survey.id})" class="text-jru-blue hover:text-blue-800">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button onclick="viewSurvey(${survey.id})" class="text-green-600 hover:text-green-800">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                                <button onclick="deleteSurvey(${survey.id})" class="text-red-600 hover:text-red-800">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
-        }
-
-        function renderOffices() {
-            const container = document.getElementById('officesList');
-            container.innerHTML = offices.map(office => `
-                <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                    <div>
-                        <div class="font-medium text-gray-900">${office.name}</div>
-                        <div class="text-sm text-gray-500">Code: ${office.code}</div>
+        <!-- Reusable Confirmation Modal -->
+<div id="confirmationModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-xl shadow-xl max-w-md w-full">
+            <div class="p-6">
+                <div class="flex items-start">
+                    <!-- Icon (e.g., warning) -->
+                    <div class="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                        <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>
                     </div>
-                    <div class="flex space-x-2">
-                        <button onclick="editOffice(${office.id})" class="text-blue-600 hover:text-blue-800">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button onclick="deleteOffice(${office.id})" class="text-red-600 hover:text-red-800">
-                            <i class="fas fa-trash"></i>
-                        </button>
+                    <div class="ml-4 text-left">
+                        <!-- Title -->
+                        <h3 id="confirmationTitle" class="text-lg leading-6 font-bold text-gray-900">
+                            Archive Office
+                        </h3>
+                        <!-- Message Body -->
+                        <div class="mt-2">
+                            <p id="confirmationMessage" class="text-sm text-gray-600">
+                                Are you sure you want to archive this office? It will be hidden from active use.
+                            </p>
+                        </div>
                     </div>
                 </div>
-            `).join('');
-        }
+            </div>
+            <!-- Action Buttons -->
+            <div class="bg-gray-50 px-6 py-4 flex justify-end space-x-4 rounded-b-xl">
+                <button id="confirmCancelBtn" type="button" class="px-4 py-2 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
+                    Cancel
+                </button>
+                <button id="confirmActionBtn" type="button" class="px-4 py-2 bg-red-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-red-700">
+                    Archive
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
-        function renderServices() {
-            const selectedOfficeId = document.getElementById('officeFilter').value;
-            const filteredServices = selectedOfficeId ? 
-                services.filter(s => s.office_id == selectedOfficeId) : 
-                services;
 
-            const container = document.getElementById('servicesList');
-            
-            if (filteredServices.length === 0) {
-                container.innerHTML = '<p class="text-gray-500 text-center py-4">No services found</p>';
-                return;
-            }
+    <!-- Success and Error Modal -->
+    <div id="toastNotification" class="fixed top-5 right-5 text-white py-3 px-6 rounded-lg shadow-xl z-[100] transition-all duration-300 ease-in-out opacity-0 hidden">
+    <div class="flex items-center">
+        <i id="toastIcon" class="mr-3 text-xl"></i>
+        <span id="toastMessage" class="font-medium"></span>
+    </div>
+    </div>
 
-            container.innerHTML = filteredServices.map(service => {
-                const office = offices.find(o => o.id == service.office_id);
-                return `
-                    <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                        <div>
-                            <div class="font-medium text-gray-900">${service.name}</div>
-                            <div class="text-sm text-gray-500">${office ? office.name : 'Unknown Office'}</div>
-                        </div>
-                        <div class="flex space-x-2">
-                            <button onclick="editService(${service.id})" class="text-blue-600 hover:text-blue-800">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button onclick="deleteService(${service.id})" class="text-red-600 hover:text-red-800">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        // Modal Management
-        function openCreateSurveyModal() {
-            document.getElementById('createSurveyModal').classList.remove('hidden');
-        }
-
-        function closeCreateSurveyModal() {
-            document.getElementById('createSurveyModal').classList.add('hidden');
-            document.getElementById('createSurveyForm').reset();
-        }
-
-        function openAddOfficeModal() {
-            document.getElementById('addOfficeModal').classList.remove('hidden');
-        }
-
-        function closeAddOfficeModal() {
-            document.getElementById('addOfficeModal').classList.add('hidden');
-            document.getElementById('addOfficeForm').reset();
-        }
-
-        function openAddServiceModal() {
-            document.getElementById('addServiceModal').classList.remove('hidden');
-        }
-
-        function closeAddServiceModal() {
-            document.getElementById('addServiceModal').classList.add('hidden');
-            document.getElementById('addServiceForm').reset();
-        }
-
-        // Form Handlers
-        async function handleCreateSurvey(e) {
-            e.preventDefault();
-            
-            const formData = {
-                title: document.getElementById('newSurveyTitle').value,
-                description: document.getElementById('newSurveyDescription').value,
-                office_id: document.getElementById('newSurveyOffice').value,
-                service_id: document.getElementById('newSurveyService').value
-            };
-
-            // Redirect to survey builder with parameters
-            const params = new URLSearchParams(formData);
-            window.location.href = `survey-builder.php?${params.toString()}`;
-        }
-
-        async function handleAddOffice(e) {
-
-            e.preventDefault();
-            
-            const newOffice = {
-                name: document.getElementById('newOfficeName').value,
-                code: document.getElementById('newOfficeCode').value,
-                description: document.getElementById('newOfficeDescription').value
-            };
-
-            try {
-                const response = await fetch("api/offices.php", {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(newOffice)
-                });
-
-                const result = await response.json();
-                if (result.success) {
-                    alert("Office added successfully!");
-
-                    await loadOffices();
-                    populateOfficeSelects();
-                    closeAddOfficeModal();
-
-                } else {
-                    alert("Error adding office: " + result.message);
-                }
-            }   catch (error) {
-                console.error('Error submitting form:', error);
-                alert('A network error occurred. Please try again.' + error.message);
-            }
-            
-        }
-
-        async function handleAddService(e) {
-            e.preventDefault();
-            
-            const newService = {
-                office_id: document.getElementById('newServiceOffice').value,
-                name: document.getElementById('newServiceName').value,
-                code: document.getElementById('newServiceCode').value,
-                description: document.getElementById('newServiceDescription').value
-            };
-
-            // Add to local array for demo
-            services.push({
-                id: services.length + 1,
-                ...newService
-            });
-
-            renderServices();
-            closeAddServiceModal();
-            alert('Service added successfully!');
-        }
-
-        // Helper Functions
-        function populateOfficeSelects() {
-            const selects = [
-                document.getElementById('newSurveyOffice'),
-                document.getElementById('officeFilter'),
-                document.getElementById('newServiceOffice')
-            ];
-
-            selects.forEach(select => {
-                if (!select) return;
-                
-                const currentValue = select.value;
-                const isFilter = select.id === 'officeFilter';
-                
-                select.innerHTML = isFilter ? 
-                    '<option value="">All Offices</option>' : 
-                    '<option value="">Select Office</option>';
-                
-                offices.forEach(office => {
-                    const option = document.createElement('option');
-                    option.value = office.id;
-                    option.textContent = office.name;
-                    select.appendChild(option);
-                });
-                
-                if (currentValue) select.value = currentValue;
-            });
-        }
-
-        function handleOfficeChange() {
-            const officeId = document.getElementById('newSurveyOffice').value;
-            const serviceSelect = document.getElementById('newSurveyService');
-            
-            serviceSelect.innerHTML = '<option value="">Select Service</option>';
-            serviceSelect.disabled = !officeId;
-            
-            if (officeId) {
-                const officeServices = services.filter(s => s.office_id == officeId);
-                officeServices.forEach(service => {
-                    const option = document.createElement('option');
-                    option.value = service.id;
-                    option.textContent = service.name;
-                    serviceSelect.appendChild(option);
-                });
-            }
-        }
-
-        function filterServices() {
-            renderServices();
-        }
-
-        function updateStatistics() {
-            document.getElementById('totalSurveys').textContent = surveys.length;
-            document.getElementById('activeSurveys').textContent = surveys.filter(s => s.status === 'active').length;
-            document.getElementById('draftSurveys').textContent = surveys.filter(s => s.status === 'draft').length;
-            document.getElementById('totalResponses').textContent = surveys.reduce((sum, s) => sum + (s.response_count || 0), 0);
-        }
-
-        function getStatusClass(status) {
-            const classes = {
-                'draft': 'bg-yellow-100 text-yellow-800',
-                'active': 'bg-green-100 text-green-800',
-                'paused': 'bg-gray-100 text-gray-800',
-                'completed': 'bg-blue-100 text-blue-800',
-                'archived': 'bg-red-100 text-red-800'
-            };
-            return classes[status] || 'bg-gray-100 text-gray-800';
-        }
-
-        function formatDate(dateString) {
-            return new Date(dateString).toLocaleDateString();
-        }
-
-        function editSurvey(id) {
-            window.location.href = `survey-builder.php?id=${id}`;
-        }
-
-        function viewSurvey(id) {
-            window.open(`survey-preview.php?id=${id}`, '_blank');
-        }
-
-        function deleteSurvey(id) {
-            if (confirm('Are you sure you want to delete this survey?')) {
-                surveys = surveys.filter(s => s.id !== id);
-                renderSurveys();
-                updateStatistics();
-                alert('Survey deleted successfully!');
-            }
-        }
-
-        function handleSearch() {
-            const query = document.getElementById('searchInput').value.toLowerCase();
-            // Implement search functionality
-        }
-
-       
-    </script>
+    <script src="js/survey-management.js"> </script>
 </body>
 </html>
