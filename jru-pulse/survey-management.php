@@ -287,34 +287,58 @@
                         <!-- Offices Management -->
                         <div class="bg-white rounded-lg shadow-sm">
                             <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-                                <h3 class="text-lg font-medium text-gray-900">Offices</h3>
-                                <button id="addOfficeBtn" class="bg-jru-blue text-white px-3 py-1 rounded text-sm hover:bg-blue-800">
-                                    <i class="fas fa-plus mr-1"></i>Add Office
-                                </button>
-                            </div>
-                            <div id="openOfficeEditModal" class="">
                                 
+                                <!-- Left Side: Title -->
+                                <h3 class="text-lg font-medium text-gray-900">Offices</h3>
+                                
+                                <!-- Right Side: A group for all controls -->
+                                <div class="flex items-center space-x-4">
+                                    
+                                    <!-- Toggle Switch Group -->
+                                    <div class="flex items-center space-x-2">
+                                        <label for="showArchivedToggleOffices" class="text-sm text-gray-600">Show Archived</label>
+                                        <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" id="showArchivedToggleOffices" class="sr-only peer">
+                                        <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-jru-blue"></div>
+                                        </label>
+                                    </div>
+                                    
+                                    <!-- Add Office Button -->
+                                    <button id="addOfficeBtn" class="bg-jru-blue text-white px-3 py-1 rounded text-sm hover:bg-blue-800">
+                                        <i class="fas fa-plus mr-1"></i>Add Office
+                                    </button>
+                                </div>
                             </div>
+                            <!-- The list of offices will be rendered here -->
                             <div class="p-6">
                                 <div id="officesList" class="space-y-3">
                                     <!-- Offices will be loaded here -->
-                                    
                                 </div>
                             </div>
-                        </div>
+                         </div>
 
                         <!-- Services Management -->
                         <div class="bg-white rounded-lg shadow-sm">
                             <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
                                 <h3 class="text-lg font-medium text-gray-900">Services</h3>
-                                <button id="addServiceBtn" class="bg-jru-orange text-white px-3 py-1 rounded text-sm hover:bg-orange-600">
-                                    <i class="fas fa-plus mr-1"></i>Add Service
-                                </button>
+                                <div class="flex items-center space-x-4">
+                                    <!-- New Toggle Switch -->
+                                    <div class="flex items-center space-x-2">
+                                        <label for="showArchivedToggleServices" class="text-sm text-gray-600">Show Archived</label>
+                                        <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" id="showArchivedToggleServices" class="sr-only peer">
+                                        <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-jru-blue"></div>
+                                        </label>
+                                    </div>
+                                    <button id="addServiceBtn" class="bg-jru-orange text-white px-3 py-1 rounded text-sm hover:bg-orange-600">
+                                        <i class="fas fa-plus mr-1"></i>Add Service
+                                    </button>
+                                </div>
                             </div>
                             <div class="p-6">
                                 <div class="mb-4">
                                     <select id="officeFilter" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
-                                        <option value="">Select office to view services</option>
+                                        <option value="">Filter by Office...</option>
                                     </select>
                                 </div>
                                 <div id="servicesList" class="space-y-3">
@@ -493,42 +517,81 @@
         </div>
     </div>
 
-        <!-- Reusable Confirmation Modal -->
-<div id="confirmationModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
-    <div class="flex items-center justify-center min-h-screen p-4">
-        <div class="bg-white rounded-xl shadow-xl max-w-md w-full">
-            <div class="p-6">
-                <div class="flex items-start">
-                    <!-- Icon (e.g., warning) -->
-                    <div class="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
-                        <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>
-                    </div>
-                    <div class="ml-4 text-left">
-                        <!-- Title -->
-                        <h3 id="confirmationTitle" class="text-lg leading-6 font-bold text-gray-900">
-                            Archive Office
-                        </h3>
-                        <!-- Message Body -->
-                        <div class="mt-2">
-                            <p id="confirmationMessage" class="text-sm text-gray-600">
-                                Are you sure you want to archive this office? It will be hidden from active use.
-                            </p>
-                        </div>
-                    </div>
+    <!-- Edit Service Modal -->
+    <div id="editServiceModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-xl shadow-xl max-w-md w-full">
+                <div class="p-6 border-b border-gray-200">
+                    <h2 class="text-xl font-bold text-gray-900">Edit Service</h2>
                 </div>
-            </div>
-            <!-- Action Buttons -->
-            <div class="bg-gray-50 px-6 py-4 flex justify-end space-x-4 rounded-b-xl">
-                <button id="confirmCancelBtn" type="button" class="px-4 py-2 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
-                    Cancel
-                </button>
-                <button id="confirmActionBtn" type="button" class="px-4 py-2 bg-red-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-red-700">
-                    Archive
-                </button>
+                <div class="p-6">
+                    <form id="editServiceForm">
+                        <input type="hidden" id="editServiceId">
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Office</label>
+                                <!-- In the edit modal, the office cannot be changed -->
+                                <input type="text" id="editServiceOfficeName" class="w-full px-4 py-2 border bg-gray-100 border-gray-300 rounded-lg" readonly>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Service Name</label>
+                                <input type="text" id="editServiceName" class="w-full px-4 py-2 border border-gray-300 rounded-lg" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Service Code</label>
+                                <input type="text" id="editServiceCode" class="w-full px-4 py-2 border border-gray-300 rounded-lg" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                                <textarea id="editServiceDescription" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg"></textarea>
+                            </div>
+                        </div>
+                        <div class="flex justify-end space-x-4 mt-6">
+                            <button type="button" id="cancelEditServiceModal" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg">Cancel</button>
+                            <button type="submit" class="px-4 py-2 bg-jru-orange text-white rounded-lg">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
-</div>
+
+        <!-- Reusable Confirmation Modal -->
+    <div id="confirmationModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-xl shadow-xl max-w-md w-full">
+                <div class="p-6">
+                    <div class="flex items-start">
+                        <!-- Icon (e.g., warning) -->
+                        <div class="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                            <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>
+                        </div>
+                        <div class="ml-4 text-left">
+                            <!-- Title -->
+                            <h3 id="confirmationTitle" class="text-lg leading-6 font-bold text-gray-900">
+                                Archive Office
+                            </h3>
+                            <!-- Message Body -->
+                            <div class="mt-2">
+                                <p id="confirmationMessage" class="text-sm text-gray-600">
+                                    <!--Are you sure you want to archive this office? It will be hidden from active use. -->
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Action Buttons -->
+                <div class="bg-gray-50 px-6 py-4 flex justify-end space-x-4 rounded-b-xl">
+                    <button id="confirmCancelBtn" type="button" class="px-4 py-2 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
+                        Cancel
+                    </button>
+                    <button id="confirmActionBtn" type="button" class="px-4 py-2 bg-red-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-red-700">
+                        Archive
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
 
     <!-- Success and Error Modal -->

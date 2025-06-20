@@ -62,6 +62,9 @@
         let services = [];
         let surveys = [];
         let currentTab = 'surveys';
+        let isShowingArchivedOffices = false;
+        let isShowingArchivedServices = false;
+
 
         // Initialize the application
         document.addEventListener('DOMContentLoaded', function() {
@@ -121,8 +124,6 @@
                 });
             }
 
-           
-            
 
            const createSurveyForm = document.getElementById('createSurveyForm');
             if (createSurveyForm) {
@@ -188,7 +189,100 @@
                 searchInput.addEventListener('input', handleSearch);
             }
 
-}
+            //Show archived offices toggle
+            const showArchivedToggleOffices = document.getElementById('showArchivedToggleOffices');
+            if (showArchivedToggleOffices) {
+                showArchivedToggleOffices.addEventListener('change', handleShowArchivedToggleOffices);
+            }
+
+            //Show archived services toggle - 1st
+            const showArchivedToggleServices = document.getElementById('showArchivedToggleServices');
+            if (showArchivedToggleServices){
+                showArchivedToggleServices.addEventListener('change', handleShowArchivedServices);
+            }
+
+            const cancelEditServiceModal = document.getElementById('cancelEditServiceModal');
+            if (cancelEditServiceModal) {
+                cancelEditServiceModal.addEventListener('click', closeEditServiceModal);
+            }
+            
+            const editServiceForm = document.getElementById('editServiceForm');
+            if (editServiceForm) {
+                editServiceForm.addEventListener('submit', handleUpdateService);
+            }
+
+            
+        }
+
+        // Modal Management
+        function openCreateSurveyModal() {
+            document.getElementById('createSurveyModal').classList.remove('hidden');
+        }
+
+        function closeCreateSurveyModal() {
+            document.getElementById('createSurveyModal').classList.add('hidden');
+            document.getElementById('createSurveyForm').reset();
+        }
+
+        function openAddOfficeModal() {
+            document.getElementById('addOfficeModal').classList.remove('hidden');
+        }
+
+        function closeAddOfficeModal() {
+            document.getElementById('addOfficeModal').classList.add('hidden');
+            document.getElementById('addOfficeForm').reset();
+        }
+
+        // Handle toggle for showing archived offices
+        function handleShowArchivedToggleOffices(event) {
+           isShowingArchivedOffices = event.target.checked;
+            loadOffices();
+        }
+
+        function openOfficeEditModal(officeId) { 
+            const office = offices.find(o => o.id == officeId);
+            if (!office) {
+                console.error('Office not found for ID:', officeId);
+                alert('Could not find the office to edit.');
+                return;
+            }
+
+            document.getElementById('editOfficeId').value = office.id;
+            document.getElementById('editOfficeName').value = office.name;
+            document.getElementById('editOfficeCode').value = office.code;
+            document.getElementById('editOfficeDescription').value = office.description || '';
+
+            document.getElementById('editOfficeModal').classList.remove('hidden');
+        }
+
+         function closeEditOfficeModal() {
+            document.getElementById('editOfficeModal').classList.add('hidden');
+            document.getElementById('editOfficeForm').reset();
+        }
+
+        function openAddServiceModal() {
+            document.getElementById('addServiceModal').classList.remove('hidden');
+        }
+
+        function closeAddServiceModal() {
+            document.getElementById('addServiceModal').classList.add('hidden');
+            document.getElementById('addServiceForm').reset();
+        }
+
+        function closeEditServiceModal(){
+            document.getElementById('editServiceModal').classList.add('hidden');
+            document.getElementById('editServiceForm').reset();
+        }
+
+      
+        // called when the checkbox is toggled
+        function handleShowArchivedServices(event) {
+            isShowingArchivedServices = event.target.checked;
+            loadServices();
+        }
+
+
+
 
         // Tab Management
         function switchTab(tab) {
@@ -218,10 +312,19 @@
 
         // Data Loading Functions
         async function loadOffices() {
-            console.log('Loading offices...');
+            console.log(`Loading offices... (Archived view: ${isShowingArchivedOffices})`);
+         
+            let apiUrl;
+
+            if (isShowingArchivedOffices){
+                    apiUrl = 'api/offices.php?show_archived_offices=true';
+            } else {
+                    apiUrl = 'api/offices.php';
+            }
+
             try {
             
-                const response = await fetch('api/offices.php', {
+                const response = await fetch(apiUrl, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
@@ -252,14 +355,14 @@
             } catch (error) {
                 console.error('Error loading offices:', error);
                 
-                // Show error in the offices list
+                //Error handling for UI
                 const container = document.getElementById('officesList');
                 if (container) {
                     container.innerHTML = `
                         <div class="text-red-500 p-4 bg-red-50 rounded-lg">
                             <i class="fas fa-exclamation-triangle mr-2"></i>
-                            Failed to load offices: ${error.message}
-                            <br><small>Check console for details</small>
+                            Failed to load ofCheck consfices: ${error.message}
+                            <br><small>ole for details</small>
                             <button onclick="loadOffices()" class="mt-2 bg-blue-500 text-white px-3 py-1 rounded text-sm">
                                 Retry
                             </button>
@@ -271,47 +374,73 @@
 
 
         async function loadServices() {
+           
+            const officeId = document.getElementById('officeFilter').value;
+            
+            // We use the global 'isShowingArchivedServices' variable here
+            console.log(`Loading services... (Archived: ${isShowingArchivedServices}, Office ID: ${officeId})`);
+            
+            // Start with the base URL
+            let apiUrl = 'api/services.php?';
+
+            // Use URLSearchParams to build the query string cleanly
+            const params = new URLSearchParams();
+            if (isShowingArchivedServices) {
+                params.append('show_archived_services', 'true');
+            }
+            if (officeId) {
+                params.append('office_id', officeId);
+            }
+            
+            // Add the parameters to the URL
+            apiUrl += params.toString();
+
+            // --- STEP 2: Fetch data and handle UI updates (inside try/catch) ---
             try {
-                const response = await fetch('api/services.php');
+                const response = await fetch(apiUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    cache: 'no-cache'
+                });
+
+                console.log('Service Response status:', response.status);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
                 const result = await response.json();
+                console.log('Service API response:', result);
+
                 if (result.success) {
                     services = result.data;
                     console.log('Services loaded successfully:', services.length, 'services');
-                }
-            } catch (error) {
-                console.error('Error loading services:', error);
-                // Use fallback data for demo, id 1-11 are services for offices 1-11, office_id is the id of the office(Foreign key)
-                services = [
-                    {id: 1, office_id: 1, name: "Document request", code: "document-request"},
-                    {id: 2, office_id: 2, name: "Onsite inquiry", code: "onsite-inquiry"},
-                    {id: 3, office_id: 2, name: "Online inquiry", code: "online-inquiry"},
-                    {id: 4, office_id: 3, name: "Onsite Payment", code: "onsite-payment"},
-                    {id: 5, office_id: 4, name: "Online Library Services (Email, social media platforms)", code: "online-library-services"},
-                    {id: 6, office_id: 4, name: "Face-to-Face Library Services", code: "face-to-face-library"},
-                    {id: 7, office_id: 4, name: "Borrowing of printed materials", code: "borrowing-materials"},
-                    {id: 8, office_id: 4, name: "Online Library Instructions", code: "online-instructions"},
-                    {id: 9, office_id: 4, name: "Participation on Library activities and programs", code: "library-activities"},
-                    {id: 10, office_id: 5, name: "Online Inquiry / Technical assistance", code: "online-tech-assistance"},
-                    {id: 11, office_id: 5, name: "Face-To-Face inquiry assistance", code: "face-to-face-tech"},
-                    {id: 12, office_id: 5, name: "Technical Assistance during events", code: "event-tech-support"},
-                    {id: 13, office_id: 5, name: "Classroom/Office Technical Assistance", code: "classroom-tech-support"},
-                    {id: 14, office_id: 6, name: "Medical Check-up/Consultation", code: "medical-checkup"},
-                    {id: 15, office_id: 6, name: "Dental Check-up/Consultation", code: "dental-checkup"},
-                    {id: 16, office_id: 6, name: "Request for medical clearances", code: "request-medical-clearance"},
-                    {id: 17, office_id: 7, name: "Request for Good Moral Certificate", code: "request-good-moral"},
-                    {id: 18, office_id: 7, name:"Request for Counseling", code: "request-counseling"},
-                    {id: 19, office_id: 7, name: "Scholarship Inquiry", code: "scholarship-inquiry"},
-                    {id: 20, office_id: 8, name: "Filling of complaint", code: "filling-complaint"},
-                    {id: 21, office_id: 8, name: "Request for ID Replacement Form", code: "request-id-replacement-form"},
-                    {id: 22, office_id: 8, name: "Request for Admission Admission Slip", code: "request-admission-slip"},
-                    {id: 23, office_id: 8, name: "Request for Temporary School ID", code: "request-temporary-school-id"},
-                    {id: 24, office_id: 9, name: "Borrowing of Sports Equipment", code: "borrowing-sports-equipment"},
-                    {id: 25, office_id: 10, name: "General Inquiries", code: "general-inquiries"},
-                    {id: 26, office_id: 11, name: "Request for Vehicle", code: "request-vehicle"},
-                    {id: 27, office_id: 11, name: "Facility Maintenance", code: "facility-maintenance"},
-                    {id: 28, office_id: 11, name: "Auditorium Reservation", code: "auditorium-reservation"},
 
-                ];
+                    // After loading, render the new list
+                    renderServices();
+                } else {
+                    console.error('API returned error while loading services:', result.message);
+                    throw new Error(result.message);
+                }
+
+            } catch (error) {
+                console.error('Error in loadServices function:', error);
+
+                // This is optional but good practice: show an error in the UI
+                const container = document.getElementById('servicesList');
+                if (container) {
+                    container.innerHTML = `
+                        <div class="text-red-500 p-4 bg-red-50 rounded-lg text-center">
+                            <i class="fas fa-exclamation-triangle mr-2"></i>
+                            Failed to load services.
+                            <button onclick="loadServices()" class="mt-2 bg-blue-500 text-white px-3 py-1 rounded text-sm">
+                                Retry
+                            </button>
+                        </div>
+                    `;
+                }
             }
         }
 
@@ -391,110 +520,102 @@
             }).join('');
         }
 
-        function renderOffices() {
-            const container = document.getElementById('officesList');
-            container.innerHTML = offices.map(office => `
-                <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                    <div>
-                        <div class="font-medium text-gray-900">${office.name}</div>
-                        <div class="text-sm text-gray-500">Code: ${office.code}</div>
-                    </div>
-                    <div class="flex space-x-2">
-                        <button onclick="openOfficeEditModal(${office.id})" class="text-blue-600 hover:text-blue-800">
+           function renderOffices() {
+                const container = document.getElementById('officesList');
+                if (offices.length === 0) {
+                    container.innerHTML = `<p class="text-gray-500 text-center py-4">${isShowingArchivedOffices ? 'No archived offices found.' : 'No active offices found.'}</p>`;
+                    return;
+                }
+
+                container.innerHTML = offices.map(office => {
+                    // Use the global state variable to decide which buttons to show
+                    const buttons = isShowingArchivedOffices
+                        ? `<!-- Reactivate button -->
+                        <button onclick="reactivateOffice(${office.id})" class="text-green-600 hover:text-green-800" title="Reactivate Office">
+                            <i class="fas fa-undo-alt"></i>
+                        </button>`
+                        : `<!-- Edit and Archive buttons -->
+                        <button onclick="openOfficeEditModal(${office.id})" class="text-blue-600 hover:text-blue-800" title="Edit Office">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button onclick="deleteOffice(${office.id})" class="text-red-600 hover:text-red-800">
+                        <button onclick="deleteOffice(${office.id})" class="text-red-600 hover:text-red-800" title="Archive Office">
                             <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                </div>
-            `).join('');
-        }
+                        </button>`;
+
+                    return `
+                        <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                            <div>
+                                <div class="font-medium text-gray-900">${office.name}</div>
+                                <div class="text-sm text-gray-500">Code: ${office.code}</div>
+                            </div>
+                            <div class="flex space-x-4">${buttons}</div>
+                        </div>`;
+                }).join('');
+            }
 
         function renderServices() {
-            const selectedOfficeId = document.getElementById('officeFilter').value;
-            const filteredServices = selectedOfficeId ? 
-                services.filter(s => s.office_id == selectedOfficeId) : 
-                services;
-
             const container = document.getElementById('servicesList');
             
-            if (filteredServices.length === 0) {
-                container.innerHTML = '<p class="text-gray-500 text-center py-4">No services found</p>';
+            // The services array is now pre-filtered by the loadServices() API call,
+            // so we can use it directly.
+
+            if (services.length === 0) {
+                // This line now correctly checks the state to show the right message
+                container.innerHTML = `<p class="text-gray-500 text-center py-4">${isShowingArchivedServices ? 'No archived services found.' : 'No active services found.'}</p>`;
                 return;
             }
 
-            container.innerHTML = filteredServices.map(service => {
-                const office = offices.find(o => o.id == service.office_id);
+            container.innerHTML = services.map(service => {
+                
+                // This ternary operator checks the global state variable and chooses the correct set of buttons.
+                const buttons = isShowingArchivedServices
+                    ? `<!-- We are in archived view, so show the Reactivate button -->
+                    <button onclick="reactivateService(${service.id})" class="text-green-600 hover:text-green-800" title="Reactivate Service">
+                        <i class="fas fa-undo-alt"></i>
+                    </button>`
+                    : `<!-- We are in the active view, so show Edit and Archive buttons -->
+                    <button onclick="openServiceEditModal(${service.id})" class="text-blue-600 hover:text-blue-800" title="Edit Service">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button onclick="deleteService(${service.id})" class="text-red-600 hover:text-red-800" title="Archive Service">
+                        <i class="fas fa-trash"></i>
+                    </button>`;
+
                 return `
                     <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
                         <div>
                             <div class="font-medium text-gray-900">${service.name}</div>
-                            <div class="text-sm text-gray-500">${office ? office.name : 'Unknown Office'}</div>
+                            <div class="text-sm text-gray-500">${service.office_name || 'Unknown Office'}</div>
                         </div>
-                        <div class="flex space-x-2">
-                            <button onclick="editService(${service.id})" class="text-blue-600 hover:text-blue-800">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button onclick="deleteService(${service.id})" class="text-red-600 hover:text-red-800">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    </div>
-                `;
+                        <div class="flex space-x-4">${buttons}</div>
+                    </div>`;
             }).join('');
         }
-
-        // Modal Management
-        function openCreateSurveyModal() {
-            document.getElementById('createSurveyModal').classList.remove('hidden');
-        }
-
-        function closeCreateSurveyModal() {
-            document.getElementById('createSurveyModal').classList.add('hidden');
-            document.getElementById('createSurveyForm').reset();
-        }
-
-        function openAddOfficeModal() {
-            document.getElementById('addOfficeModal').classList.remove('hidden');
-        }
-
-        function closeAddOfficeModal() {
-            document.getElementById('addOfficeModal').classList.add('hidden');
-            document.getElementById('addOfficeForm').reset();
-        }
-
-        function openOfficeEditModal(officeId) { 
-            const office = offices.find(o => o.id == officeId);
-            if (!office) {
-                console.error('Office not found for ID:', officeId);
-                alert('Could not find the office to edit.');
-                return;
-            }
-
-            document.getElementById('editOfficeId').value = office.id;
-            document.getElementById('editOfficeName').value = office.name;
-            document.getElementById('editOfficeCode').value = office.code;
-            document.getElementById('editOfficeDescription').value = office.description || '';
-
-            document.getElementById('editOfficeModal').classList.remove('hidden');
-        }
-
-         function closeEditOfficeModal() {
-            document.getElementById('editOfficeModal').classList.add('hidden');
-            document.getElementById('editOfficeForm').reset();
-        }
+        
 
       
+        // Reactivate Office Function
+        async function reactivateOffice(officeId) {
+            try {
+                // Use the PUT request, as we are UPDATING the state of the office
+                const response = await fetch(`api/offices.php?action=reactivate&id=${officeId}`, {
+                    method: 'PUT'
+                });
+                const result = await response.json();
 
-        function openAddServiceModal() {
-            document.getElementById('addServiceModal').classList.remove('hidden');
+                if (result.success) {
+                    showToastNotification('Office reactivated successfully!', 'success');
+                    // Reload the archived list so the item disappears from it
+                    loadOffices(true); 
+                } else {
+                    showToastNotification(result.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error reactivating office:', error);
+                showToastNotification('A network error occurred.', 'error');
+            }
         }
 
-        function closeAddServiceModal() {
-            document.getElementById('addServiceModal').classList.add('hidden');
-            document.getElementById('addServiceForm').reset();
-        }
 
         // Form Handlers
         async function handleCreateSurvey(e) {
@@ -532,19 +653,20 @@
                 });
 
                 const result = await response.json();
-                if (result.success) {
-                    showSuccessModal("Office added successfully!");
+                console.log('Server response object:', result);
+                if (result.success === true || result.success == 1) {
+                   showToastNotification("Office added successfully!", 'success');
 
                     await loadOffices();
                     populateOfficeSelects();
                     closeAddOfficeModal();
 
                 } else {
-                    alert("Error adding office: " + result.message);
+                     showToastNotification("Error adding office: " + result.message);
                 }
             }   catch (error) {
                 console.error('Error submitting form:', error);
-                alert('A network error occurred. Please try again.' + error.message);
+                showToastNotification('A network error occured. ', 'error'); 
             }
             
         }
@@ -583,78 +705,44 @@
             }
         }
 
-       async function deleteOffice(officeId) {
-    try {
-        await showConfirmationModal({
-            title: 'Archive Office',
-            message: 'Are you sure you want to archive this office? It will be hidden from all lists but can be recovered by an administrator.',
-            actionText: 'Yes, Archive',
-            destructive: true
-        });
+       
+        async function deleteOffice(officeId) {
+            try {
+                await showConfirmationModal({
+                    title: 'Archive Office',
+                    message: 'Are you sure you want to archive this office? It will be hidden from active use.',
+                    actionText: 'Yes, Archive',
+                    destructive: true
+                });
 
-        // This fetch call goes to the OFFICES api
-        const response = await fetch(`api/offices.php?id=${officeId}`, {
-            method: 'DELETE'
-        });
+                // This fetch call goes to the OFFICES api
+                const response = await fetch(`api/offices.php?id=${officeId}`, {
+                    method: 'DELETE'
+             });
         
-        const result = await response.json();
+             const result = await response.json();
 
-        if (result.success) {
-            showToastNotification('Office archived successfully!', 'success');
-            await loadOffices(); // It reloads OFFICES
-        } else {
-            showToastNotification(result.message, 'error');
-        }
-
-    }  catch (error) {
-                // 3. If the user clicks "Cancel", the promise rejects, and the code
-                // jumps directly to this 'catch' block.
-                // We also catch real network errors here.
-                if (error) { // Check if 'error' is a real error, not just a cancel click
-                    console.error('Error archiving office:', error);
-                    showToastNotification('A network error occurred.', 'error');
+                if (result.success) {
+                    showToastNotification('Office archived successfully!', 'success');
+                    await loadOffices(); // It reloads OFFICES
                 } else {
-                    // This is what happens on "Cancel" click. Do nothing or show a message.
-                    console.log('Office archival was cancelled by the user.');
+                    showToastNotification(result.message, 'error');
                 }
-            }
+
+                }  catch (error) {
+                       
+                        if (error) { // Check if 'error' is a real error, not just a cancel click
+                            console.error('Error archiving office:', error);
+                            showToastNotification('A network error occurred.', 'error');
+                        } else {
+                            // This is what happens on "Cancel" click. Do nothing or show a message.
+                            console.log('Office archival was cancelled by the user.');
+                        }
+                }
         }
 
-
-        async function deleteService(serviceId) {
-    try {
-        await showConfirmationModal({
-            title: 'Archive Service',
-            message: 'Are you sure you want to archive this service? It will be hidden from use but can be recovered later.',
-            actionText: 'Yes, Archive',
-            destructive: true
-        });
-
-        // This fetch call goes to the SERVICES api
-        const response = await fetch(`api/services.php?id=${serviceId}`, {
-            method: 'DELETE'
-        });
-
-        const result = await response.json();
-
-        if (result.success) {
-            showToastNotification('Service archived successfully!', 'success');
-            await loadServices(); // It reloads SERVICES
-            renderServices();     // It re-renders the SERVICES list
-        } else {
-            showToastNotification(result.message, 'error');
-        }
-    } catch (error) {
-        if (error) {
-            console.error('Error archiving service:', error);
-            showToastNotification('A network error occurred.', 'error');
-        } else {
-            console.log('Service archival was cancelled.');
-        }
-    }
-}
-
-        async function handleAddService(e) {
+        
+         async function handleAddService(e) {
             e.preventDefault();
             
             const newService = {
@@ -664,16 +752,169 @@
                 description: document.getElementById('newServiceDescription').value
             };
 
-            // Add to local array for demo
-            services.push({
-                id: services.length + 1,
-                ...newService
-            });
+            //check if an office is selected
+            if (!newService.office_id) {
+                showToastNotification('Please select an office for the service.', 'error');
+                return;
+            }
 
-            renderServices();
-            closeAddServiceModal();
-            alert('Service added successfully!');
+            try {
+                const response = await fetch('api/services.php', {
+                    method:'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(newService)
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    showToastNotification('Service added successfully!');
+                    
+                    await loadServices();
+                    closeAddServiceModal();
+                } else {
+                     showToastNotification(result.message || 'An error occurred.', 'error');
+                }
+
+            } catch (error) {
+                console.error('Error adding service: ', error);
+                showToastNotification('A network error occured. ', 'errror');
+            }
         }
+
+        function openServiceEditModal(serviceId) {
+            // A quick console log to confirm the function is being called
+            console.log("Opening edit modal for service ID:", serviceId);
+
+            // Find the service in our global 'services' array
+            const service = services.find(s => s.id == serviceId);
+            
+            // Safety check in case the service isn't found
+            if (!service) {
+                console.error("Could not find service with ID:", serviceId);
+                showToastNotification('Error: Could not find the service to edit.', 'error');
+                return;
+            }
+
+            // --- Populate the form fields using the IDs from your HTML ---
+            document.getElementById('editServiceId').value = service.id;
+            document.getElementById('editServiceName').value = service.name;
+            document.getElementById('editServiceCode').value = service.code;
+            document.getElementById('editServiceDescription').value = service.description || '';
+            
+            // 'office_name' is the special field we get from our API's JOIN query
+            document.getElementById('editServiceOfficeName').value = service.office_name || 'Unknown Office';
+            
+            // Finally, show the modal by removing the 'hidden' class
+            document.getElementById('editServiceModal').classList.remove('hidden');
+        }
+
+        
+        async function handleUpdateService(e) {
+            e.preventDefault();
+            const serviceId = document.getElementById('editServiceId').value;
+            const updatedService = {
+                name: document.getElementById('editServiceName').value,
+                code: document.getElementById('editServiceCode').value,
+                description: document.getElementById('editServiceDescription').value
+            };
+
+            try {
+                const response = await fetch(`api/services.php?id=${serviceId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updatedService)
+                });
+                const result = await response.json();
+                if (result.success) {
+                    showToastNotification('Service updated successfully!', 'success');
+                    closeEditServiceModal();
+                    await loadServices();
+                } else {
+                    showToastNotification(result.message || 'Update failed.', 'error');
+                }
+            } catch (error) {
+                showToastNotification('A network error occurred.', 'error');
+            }
+        }
+
+        // ** ADD ** this function for archiving (soft-deleting)
+        async function deleteService(serviceId) {
+            try {
+                await showConfirmationModal({
+                    title: 'Archive Service',
+                    message: 'Are you sure? This will hide the service from active use.',
+                    actionText: 'Yes, Archive'
+                });
+                
+                const response = await fetch(`api/services.php?id=${serviceId}`, { method: 'DELETE' });
+                const result = await response.json();
+
+                if (result.success) {
+                    showToastNotification('Service archived successfully!', 'success');
+                    await loadServices();
+                } else {
+                    showToastNotification(result.message || 'Archive failed.', 'error');
+                }
+            } catch (error) {
+                // This catch block handles the user clicking "Cancel" on the modal
+                if(error) { // Only show network error if it's a real error
+                    console.error("Error during service archival:", error);
+                    showToastNotification('A network error occurred.', 'error');
+                }
+            }
+        }
+
+        // ** ADD ** this function for reactivating
+        async function reactivateService(serviceId) {
+            try {
+                const response = await fetch(`api/services.php?action=reactivate&id=${serviceId}`, { method: 'PUT' });
+                const result = await response.json();
+                if (result.success) {
+                    showToastNotification('Service reactivated successfully!', 'success');
+                    await loadServices(); // Reloads the list, removing the item from the archived view
+                } else {
+                    showToastNotification(result.message || 'Reactivation failed.', 'error');
+                }
+            } catch (error) {
+                showToastNotification('A network error occurred.', 'error');
+            }
+        }
+     
+        
+        async function deleteService(serviceId) {
+            try {
+                await showConfirmationModal({
+                    title: 'Archive Service',
+                    message: 'Are you sure you want to archive this office? It will be hidden from active use.',
+                    actionText: 'Yes, Archive',
+                    destructive: true
+                });
+
+                // This fetch call goes to the SERVICES api
+                const response = await fetch(`api/services.php?id=${serviceId}`, {
+                    method: 'DELETE'
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showToastNotification('Service archived successfully!', 'success');
+                    await loadServices(); // It reloads SERVICES
+                    renderServices();     // It re-renders the SERVICES list
+                } else {
+                    showToastNotification(result.message, 'error');
+                }
+            } catch (error) {
+                if (error) {
+                    console.error('Error archiving service:', error);
+                    showToastNotification('A network error occurred.', 'error');
+                } else {
+                    console.log('Service archival was cancelled.');
+                }
+            }
+        }
+
+       
 
         // Helper Functions
         function populateOfficeSelects() {
@@ -766,42 +1007,42 @@
         }
 
         const confirmationModal = document.getElementById('confirmationModal');
-const confirmTitle = document.getElementById('confirmationTitle');
-const confirmMessage = document.getElementById('confirmationMessage');
-const confirmActionBtn = document.getElementById('confirmActionBtn');
-const confirmCancelBtn = document.getElementById('confirmCancelBtn');
+        const confirmTitle = document.getElementById('confirmationTitle');
+        const confirmMessage = document.getElementById('confirmationMessage');
+        const confirmActionBtn = document.getElementById('confirmActionBtn');
+        const confirmCancelBtn = document.getElementById('confirmCancelBtn');
 
-// This function returns a Promise that resolves or rejects based on user action
-function showConfirmationModal({ title, message, actionText = 'Confirm', destructive = true }) {
-    return new Promise((resolve, reject) => {
-        confirmTitle.textContent = title;
-        confirmMessage.textContent = message;
-        confirmActionBtn.textContent = actionText;
+        // This function returns a Promise that resolves or rejects based on user action
+        function showConfirmationModal({ title, message, actionText = 'Confirm', destructive = true }) {
+            return new Promise((resolve, reject) => {
+                confirmTitle.textContent = title;
+                confirmMessage.textContent = message;
+                confirmActionBtn.textContent = actionText;
 
-        // Style the action button (e.g., red for destructive, blue for normal)
-        if (destructive) {
-            confirmActionBtn.classList.remove('bg-jru-blue', 'hover:bg-blue-800');
-            confirmActionBtn.classList.add('bg-red-600', 'hover:bg-red-700');
-        } else {
-            confirmActionBtn.classList.remove('bg-red-600', 'hover:bg-red-700');
-            confirmActionBtn.classList.add('bg-jru-blue', 'hover:bg-blue-800');
+                // Style the action button (e.g., red for destructive, blue for normal)
+                if (destructive) {
+                    confirmActionBtn.classList.remove('bg-jru-blue', 'hover:bg-blue-800');
+                    confirmActionBtn.classList.add('bg-red-600', 'hover:bg-red-700');
+                } else {
+                    confirmActionBtn.classList.remove('bg-red-600', 'hover:bg-red-700');
+                    confirmActionBtn.classList.add('bg-jru-blue', 'hover:bg-blue-800');
+                }
+
+                confirmationModal.classList.remove('hidden');
+
+                // We use .onclick here and set it to null later to ensure we don't
+                // have multiple listeners stacking up on the buttons.
+                confirmActionBtn.onclick = () => {
+                    confirmationModal.classList.add('hidden');
+                    resolve(); // User confirmed
+                };
+
+                confirmCancelBtn.onclick = () => {
+                    confirmationModal.classList.add('hidden');
+                    reject(); // User canceled
+                };
+            });
         }
-
-        confirmationModal.classList.remove('hidden');
-
-        // We use .onclick here and set it to null later to ensure we don't
-        // have multiple listeners stacking up on the buttons.
-        confirmActionBtn.onclick = () => {
-            confirmationModal.classList.add('hidden');
-            resolve(); // User confirmed
-        };
-
-        confirmCancelBtn.onclick = () => {
-            confirmationModal.classList.add('hidden');
-            reject(); // User canceled
-        };
-    });
-}
 
 
         let toastTimer; 
@@ -845,6 +1086,8 @@ function showConfirmationModal({ title, message, actionText = 'Confirm', destruc
                 }, 300);
             }, duration);
         }
+
+ 
 
         function handleSearch() {
             const query = document.getElementById('searchInput').value.toLowerCase();
