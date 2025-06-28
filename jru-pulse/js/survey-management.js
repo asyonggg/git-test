@@ -1,4 +1,4 @@
-          // Sidebar toggle functionality
+        // Sidebar toggle functionality
         const sidebar = document.getElementById('sidebar');
         const sidebarToggle = document.getElementById('sidebarToggle');
         const logoContainer = document.getElementById('logoContainer');
@@ -54,16 +54,13 @@
     // Add the existing sidebar toggle event listener
     sidebarToggle.addEventListener('click', toggleSidebar);
         
-          
-        
-
         // Global state
         let offices = [];
         let services = [];
-        let surveys = [];
-        let currentTab = 'surveys';
         let isShowingArchivedOffices = false;
         let isShowingArchivedServices = false;
+        let surveys = [];
+        let currentTab = 'surveys';
 
 
         // Initialize the application
@@ -130,17 +127,19 @@
                 createSurveyForm.addEventListener('submit', handleCreateSurvey);
             }
 
-            // Office/Service management
+            // Add Office Modal
             const addOfficeBtn = document.getElementById('addOfficeBtn');
             if (addOfficeBtn) {
                 addOfficeBtn.addEventListener('click', openAddOfficeModal);
             }
             
+            //Add Service modal
             const addServiceBtn = document.getElementById('addServiceBtn');
             if (addServiceBtn) {
                 addServiceBtn.addEventListener('click', openAddServiceModal);
             }
             
+            // Modal close buttons
             const cancelAddOffice = document.getElementById('cancelAddOffice');
             if (cancelAddOffice) {
                 cancelAddOffice.addEventListener('click', closeAddOfficeModal);
@@ -281,9 +280,6 @@
             loadServices();
         }
 
-
-
-
         // Tab Management
         function switchTab(tab) {
             currentTab = tab;
@@ -374,13 +370,11 @@
 
 
         async function loadServices() {
-           
             const officeId = document.getElementById('officeFilter').value;
             
-            // We use the global 'isShowingArchivedServices' variable here
             console.log(`Loading services... (Archived: ${isShowingArchivedServices}, Office ID: ${officeId})`);
             
-            // Start with the base URL
+            // base API URL
             let apiUrl = 'api/services.php?';
 
             // Use URLSearchParams to build the query string cleanly
@@ -395,7 +389,7 @@
             // Add the parameters to the URL
             apiUrl += params.toString();
 
-            // --- STEP 2: Fetch data and handle UI updates (inside try/catch) ---
+            // ---: Fetch data and handle UI updates (inside try/catch)
             try {
                 const response = await fetch(apiUrl, {
                     method: 'GET',
@@ -427,8 +421,7 @@
 
             } catch (error) {
                 console.error('Error in loadServices function:', error);
-
-                // This is optional but good practice: show an error in the UI
+                // show an error in the UI
                 const container = document.getElementById('servicesList');
                 if (container) {
                     container.innerHTML = `
@@ -445,25 +438,46 @@
         }
 
         async function loadSurveys() {
+            console.log("Attempting to load surveys...");
             try {
+                //fetch data from Survey api
                 const response = await fetch('api/surveys.php');
-                const result = await response.json();
-                if (result.success) {
-                    surveys = result.data;
-                    renderSurveys();
-                }
-            } catch (error) {
-                console.error('Error loading surveys:', error);
-                surveys = []; // Empty for demo
-                renderSurveys();
-            }
-        }
 
-        // Rendering Functions
+                if (!response.ok) {
+                    // Will correctly throw an error for a 404 response
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                
+                if (result.success && Array.isArray(result.data)) {
+                    // If successful, set the surveys array to the data
+                    surveys = result.data;
+                } else {
+                    // If the API call succeeded but the data is bad, still reset the array
+                    console.error("API response was not successful or data is not an array:", result);
+                    surveys = [];
+                }
+
+            } catch (error) {
+                // If ANY error happens (network, 404, bad JSON), we land here.
+                console.error('Error loading surveys:', error.message);
+                
+                // **This is the most important part.**
+                // We GUARANTEE that the surveys array is reset to empty on failure.
+                surveys = [];
+            }
+            
+            // By placing it here, it will always be called with the correct state of the surveys array.
+            renderSurveys();
+        }
+        
+       
         function renderSurveys() {
             const tbody = document.getElementById('surveysTableBody');
             
-            if (surveys.length === 0) {
+            if (!surveys || surveys.length === 0) {
+                // This "empty state" logic is correct and stays.
                 tbody.innerHTML = `
                     <tr>
                         <td colspan="7" class="px-6 py-8 text-center text-gray-500">
@@ -471,8 +485,8 @@
                                 <i class="fas fa-poll text-4xl text-gray-300 mb-4"></i>
                                 <p class="text-lg font-medium">No surveys found</p>
                                 <p class="text-sm">Create your first survey to get started</p>
-                                <button onclick="openCreateSurveyModal()" class="mt-4 bg-jru-blue text-white px-4 py-2 rounded-lg">
-                                    Create Survey
+                                <button onclick="openCreateSurveyModal()" class="mt-4 bg-jru-blue text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors">
+                                    <i class="fas fa-plus mr-2"></i>Create Survey
                                 </button>
                             </div>
                         </td>
@@ -481,36 +495,51 @@
                 return;
             }
 
+            //This part render the surveys from databae
             tbody.innerHTML = surveys.map(survey => {
-                const office = offices.find(o => o.id == survey.office_id);
-                const service = services.find(s => s.id == survey.service_id);
+                const officeName = survey.office_name || 'Unknown Office';
+                const serviceName = survey.service_name || 'Unknown Service';
                 
                 return `
                     <tr class="hover:bg-gray-50">
-                        <td class="px-6 py-4">
-                            <div>
-                                <div class="text-sm font-medium text-gray-900">${survey.title}</div>
-                                <div class="text-sm text-gray-500">${survey.description || 'No description'}</div>
-                            </div>
+                        <!-- Cell 1: Survey Title & Description -->
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-medium text-gray-900">${survey.title}</div>
+                            <div class="text-sm text-gray-500">${survey.description || 'No description'}</div>
                         </td>
-                        <td class="px-6 py-4 text-sm text-gray-900">${office ? office.name : 'Unknown'}</td>
-                        <td class="px-6 py-4 text-sm text-gray-900">${service ? service.name : 'Unknown'}</td>
-                        <td class="px-6 py-4">
+                        
+                        <!-- Cell 2: Office Name -->
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${officeName}</td>
+                        
+                        <!-- Cell 3: Service Name -->
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${serviceName}</td>
+                        
+                        <!-- Cell 4: Status Badge -->
+                        <td class="px-6 py-4 whitespace-nowrap">
                             <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusClass(survey.status)}">
                                 ${survey.status}
                             </span>
                         </td>
-                        <td class="px-6 py-4 text-sm text-gray-900">${survey.response_count || 0}</td>
-                        <td class="px-6 py-4 text-sm text-gray-500">${formatDate(survey.created_at)}</td>
-                        <td class="px-6 py-4 text-sm font-medium">
-                            <div class="flex space-x-2">
-                                <button onclick="editSurvey(${survey.id})" class="text-jru-blue hover:text-blue-800">
+                        
+                        <!-- Cell 5: Responses Count -->
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">${survey.response_count || 0}</td>
+                        
+                        <!-- Cell 6: Created Date -->
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${formatDate(survey.created_at)}</td>
+                        
+                        <!-- Cell 7: Action Icons -->
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <div class="flex items-center justify-end space-x-3">
+                                <button onclick="editSurvey(${survey.id})" class="text-gray-400 hover:text-jru-blue" title="Edit Survey">
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <button onclick="viewSurvey(${survey.id})" class="text-green-600 hover:text-green-800">
-                                    <i class="fas fa-eye"></i>
+                                <button onclick="viewSurvey(${survey.id})" class="text-gray-400 hover:text-green-600" title="View Results">
+                                    <i class="fas fa-chart-bar"></i>
                                 </button>
-                                <button onclick="deleteSurvey(${survey.id})" class="text-red-600 hover:text-red-800">
+                                <button onclick="getSurveyLink(${survey.id})" class="text-gray-400 hover:text-blue-600" title="Get Shareable Link">
+                                    <i class="fas fa-link"></i>
+                                </button>
+                                <button onclick="deleteSurvey(${survey.id})" class="text-gray-400 hover:text-red-600" title="Archive Survey">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </div>
@@ -520,7 +549,30 @@
             }).join('');
         }
 
-           function renderOffices() {
+        function getSurveyLink(surveyId) {
+            // Construct the full URL to the take-survey page
+            // window.location.origin gives you the base URL (e.g., http://localhost)
+            // window.location.pathname.split('/').slice(0, -1).join('/') gets the current directory path
+            const basePath = window.location.origin + window.location.pathname.split('/').slice(0, -1).join('/');
+            const surveyUrl = `${basePath}/take-survey.php?id=${surveyId}`;
+            
+            // Use a prompt box to show the link and make it easy to copy
+            window.prompt("Copy this link to share the survey:", surveyUrl);
+        }
+
+       function editSurvey(surveyId) {
+            
+            console.log(`Preparing to edit survey. Redirecting with ID: ${surveyId}`);
+            
+            // 2. Build the URL. The parameter name MUST BE 'survey_id'.
+            //    The query string MUST START with a '?'.
+            const url = `survey-builder.php?survey_id=${surveyId}`;
+            
+            // 3. Redirect the user.
+            window.location.href = url;
+        }
+
+        function renderOffices() {
                 const container = document.getElementById('officesList');
                 if (offices.length === 0) {
                     container.innerHTML = `<p class="text-gray-500 text-center py-4">${isShowingArchivedOffices ? 'No archived offices found.' : 'No active offices found.'}</p>`;
@@ -557,8 +609,6 @@
             const container = document.getElementById('servicesList');
             
             // The services array is now pre-filtered by the loadServices() API call,
-            // so we can use it directly.
-
             if (services.length === 0) {
                 // This line now correctly checks the state to show the right message
                 container.innerHTML = `<p class="text-gray-500 text-center py-4">${isShowingArchivedServices ? 'No archived services found.' : 'No active services found.'}</p>`;
@@ -592,8 +642,6 @@
             }).join('');
         }
         
-
-      
         // Reactivate Office Function
         async function reactivateOffice(officeId) {
             try {
@@ -621,6 +669,7 @@
         async function handleCreateSurvey(e) {
             e.preventDefault();
             
+            //Gets the Ids of the selected office and service
             const formData = {
                 title: document.getElementById('newSurveyTitle').value,
                 description: document.getElementById('newSurveyDescription').value,
@@ -628,8 +677,10 @@
                 service_id: document.getElementById('newSurveyService').value
             };
 
-            // Redirect to survey builder with parameters
+            // Creates a url query strings title=...deescription=...office_id=...service_id=...
             const params = new URLSearchParams(formData);
+
+            //redirects the user tothe builder page with all the data in the URL
             window.location.href = `survey-builder.php?${params.toString()}`;
         }
 
@@ -671,6 +722,7 @@
             
         }
 
+
         async function handleUpdateOffice(e){
             e.preventDefault();
 
@@ -680,7 +732,7 @@
                 code: document.getElementById('editOfficeCode').value,
                 description: document.getElementById('editOfficeDescription').value
             };
-
+            //Fetch the data of office with the update method 
             try {
                 const response = await fetch(`api/offices.php?id=${officeId}`, {
                     method: 'PUT',
@@ -697,7 +749,6 @@
                 } else {
                     alert('Error updating office: ' + result.message);
                 }
-
 
             } catch(error) {
                 console.error('Error updating office:', error);
@@ -986,24 +1037,62 @@
         }
 
         function formatDate(dateString) {
-            return new Date(dateString).toLocaleDateString();
-        }
-
-        function editSurvey(id) {
-            window.location.href = `survey-builder.php?id=${id}`;
-        }
-
-        function viewSurvey(id) {
-            window.open(`survey-preview.php?id=${id}`, '_blank');
-        }
-
-        function deleteSurvey(id) {
-            if (confirm('Are you sure you want to delete this survey?')) {
-                surveys = surveys.filter(s => s.id !== id);
-                renderSurveys();
-                updateStatistics();
-               showToastNotification('Survey deleted successfully!');
+            if(!dateString){
+                return 'N/A'; //Return when dateString is null or undefined
             }
+
+            const date = new Date(dateString + 'Z');
+
+            //check if date is invalid
+            if (isNaN(date.getTime())) {
+                return 'Invalid Date';
+            }
+
+            return date.toLocaleDateString(undefined, {
+                year: 'numeric',
+                month: 'short',
+                day:'numeric'
+            });
+        }
+
+        function editSurvey(surveyId) {
+            const url = `survey-builder.php?survey_id=${surveyId}`;
+            window.location.href = url;
+        }
+
+        function viewSurvey(surveyId) {
+            window.open(`survey-preview.php?id=${surveyId}`, '_blank');
+        }
+
+        async function deleteSurvey(surveyId) {
+            try {
+                await showConfirmationModal({ 
+                      title: 'Archive Survey',
+                    message: 'Are you sure? This will go to archive.',
+                    actionText: 'Yes, Archive'
+                });
+
+                // It sends a DELETE request to the surveys API.
+                const response = await fetch(`api/surveys.php?id=${surveyId}`, {
+                    method: 'DELETE'
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    showToastNotification('Survey archived successfully!', 'success');
+                    loadSurveys(); // Reload the list
+                } else {
+                    showToastNotification(result.message, 'error');
+                }
+            } catch (error) {
+                if(error) console.error("Error archiving survey:", error);
+            }
+        }
+        
+        function getSurveyLink(surveyId) {
+            const basePath = window.location.origin + window.location.pathname.split('/').slice(0, -1).join('/');
+            const surveyUrl = `${basePath}/take-survey.php?id=${surveyId}`;
+            window.prompt("Copy this link to share the survey:", surveyUrl);
         }
 
         const confirmationModal = document.getElementById('confirmationModal');

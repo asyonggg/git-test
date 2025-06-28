@@ -12,18 +12,6 @@ CREATE TABLE offices (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
-INSERT INTO offices (name, code, description) VALUES
-('Registrar\'s Office', 'REG', 'Handles student registration and academic records'),
-('Student Accounts Office', 'SAO', 'Manages student financial accounts and billing'),
-('Cashier', 'CASH', 'Responsible for payment processing and financial transactions'),
-('Library', 'LIB', 'Provides library services and resources for students and faculty'),
-('Information Technology Office', 'IT', 'Offers technical support and IT services'),
-('Medical & Dental Clinic', 'MED', 'Provides health services to students'),
-('Guidance & Testing Office', 'GTO', 'Offers student guidance and testing services'),
-('Student Development Office', 'SDO', 'Focuses on student affairs and development programs'),
-('Athletics Office', 'ATH', 'Manages sports and athletics programs'),
-('Customer Advocacy Office', 'CAO', 'Handles customer service and advocacy issues'),
-('Engineering & Maintenance Office', 'EMO', 'Responsible for facilities management and maintenance');
 
 
 --services PK ofc_id
@@ -39,6 +27,21 @@ CREATE TABLE services (
     FOREIGN KEY (office_id) REFERENCES offices(id) ON DELETE CASCADE,
     UNIQUE KEY unique_service_code (office_id, code)
 );
+
+
+INSERT INTO offices (name, code, description) VALUES
+('Registrar\'s Office', 'REG', 'Handles student registration and academic records'),
+('Student Accounts Office', 'SAO', 'Manages student financial accounts and billing'),
+('Cashier', 'CASH', 'Responsible for payment processing and financial transactions'),
+('Library', 'LIB', 'Provides library services and resources for students and faculty'),
+('Information Technology Office', 'IT', 'Offers technical support and IT services'),
+('Medical & Dental Clinic', 'MED', 'Provides health services to students'),
+('Guidance & Testing Office', 'GTO', 'Offers student guidance and testing services'),
+('Student Development Office', 'SDO', 'Focuses on student affairs and development programs'),
+('Athletics Office', 'ATH', 'Manages sports and athletics programs'),
+('Customer Advocacy Office', 'CAO', 'Handles customer service and advocacy issues'),
+('Engineering & Maintenance Office', 'EMO', 'Responsible for facilities management and maintenance');
+
 
 -- Registrar's Office (ID = 1)
 INSERT INTO services (office_id, name, code) VALUES
@@ -101,3 +104,41 @@ INSERT INTO services (office_id, name, code) VALUES
 (11, 'Facility maintenance', 'emo-fac-maint'),
 (11, 'Auditorium reservation', 'emo-aud-resv');
 
+
+CREATE TABLE surveys (
+  id INT(11) NOT NULL AUTO_INCREMENT,
+  title VARCHAR(255) NOT NULL,
+  description TEXT NULL DEFAULT NULL,
+  office_id INT(11) NOT NULL,
+  service_id INT(11) NOT NULL,
+  status ENUM('draft', 'active', 'archived') NOT NULL DEFAULT 'draft',
+  questions_json JSON NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  INDEX fk_surveys_office_id (office_id),
+  INDEX fk_surveys_service_id (service_id)
+) ENGINE=InnoDB;
+
+
+CREATE TABLE `respondents` (
+  `id` INT(11) NOT NULL AUTO_INCREMENT,
+  `respondent_type` ENUM('student','parent','alumni','visitor','other') NOT NULL,
+  `identifier` VARCHAR(255) NOT NULL,
+  `division` VARCHAR(100) NULL DEFAULT NULL,
+  `course` VARCHAR(100) NULL DEFAULT NULL,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE INDEX `identifier_unique` (`identifier`)
+) ENGINE=InnoDB;
+
+CREATE TABLE `survey_responses` (
+  `id` INT(11) NOT NULL AUTO_INCREMENT,
+  `survey_id` INT(11) NOT NULL,
+  `respondent_id` INT(11) NOT NULL,
+  `answers_json` JSON NOT NULL,
+  `submitted_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  INDEX `fk_responses_survey_id` (`survey_id`),
+  INDEX `fk_responses_respondent_id` (`respondent_id`)
+) ENGINE=InnoDB;
