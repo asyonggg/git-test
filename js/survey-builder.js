@@ -92,7 +92,6 @@
         }
 
 
-
         // Default template questions
         const defaultTemplate = [
             {
@@ -132,15 +131,15 @@
                 type: 'textarea',
                 text: 'Please provide any suggestions for improvement or additional comments:',
                 help: 'Share your thoughts on how we can improve our services',
-                required: false,
+                required: true,
                 title: 'Suggestions'
             }
         ];
 
 
-                // DOM Elements (defined once globally)
+        // DOM Elements (defined once globally)
         const questionsList = document.getElementById('questionsList');
-        const surveyPreview = document.getElementById('surveyPreview');
+        //Live Preview
         const questionModal = document.getElementById('questionModal');
         const templateModal = document.getElementById('templateModal');
 
@@ -190,7 +189,7 @@
                 
                 surveyQuestions = [...defaultTemplate];
                 renderQuestions();
-                renderPreview();
+                //renderPreview();
             }
             
             // Activate drag-and-drop last
@@ -286,7 +285,7 @@
                     
                     // Re-render the UI
                     renderQuestions();
-                    renderPreview();
+                   // renderPreview();
 
                     showToastNotification("Survey loaded for editing.", "success");
                 } else {
@@ -517,34 +516,7 @@
         }
 
         // Render preview
-        function renderPreview() {
-            const surveyTitle = document.getElementById('surveyTitle').value;
-            const surveyOffice = document.getElementById('surveyOffice').selectedOptions[0].text;
-            const surveyService = document.getElementById('surveyService').selectedOptions[0].text;
-            
-            let previewHTML = `
-                <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    <h3 class="font-semibold text-blue-900 text-sm">${surveyTitle}</h3>
-                    <p class="text-xs text-blue-700">${surveyOffice} - ${surveyService}</p>
-                </div>
-            `;
-            
-            surveyQuestions.forEach((question, index) => {
-                previewHTML += `
-                    <div class="mb-4 p-3 border border-gray-200 rounded-lg">
-                        <div class="flex items-center mb-2">
-                            <span class="text-xs font-medium text-gray-500 mr-2">${index + 1}.</span>
-                            <span class="text-xs font-medium text-gray-700">${question.title || 'Question'}</span>
-                            ${question.required ? '<span class="text-red-500 text-xs ml-1">*</span>' : ''}
-                        </div>
-                        <p class="text-xs text-gray-600 mb-2">${question.text}</p>
-                        ${renderPreviewInput(question)}
-                    </div>
-                `;
-            });
-            
-            surveyPreview.innerHTML = previewHTML;
-        }
+        
 
         // Render preview input based on question type
         function renderPreviewInput(question) {
@@ -614,7 +586,7 @@
                     
                     // Re-render
                     renderQuestions();
-                    renderPreview();
+                   // renderPreview();
                 }
             });
         }

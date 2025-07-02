@@ -273,21 +273,7 @@
                     </div>
 
                     <!-- Right Panel - Live Preview -->
-                    <div class="w-96 bg-gray-100 border-l border-gray-200 overflow-y-auto">
-                        <div class="p-4 bg-white border-b border-gray-200">
-                            <h3 class="font-semibold text-gray-900 flex items-center">
-                                <i class="fas fa-mobile-alt mr-2 text-jru-blue"></i>
-                                Live Preview
-                            </h3>
-                            <p class="text-xs text-gray-500 mt-1">See how your survey will look to students</p>
-                        </div>
-                        
-                        <div class="p-4">
-                            <div id="surveyPreview" class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 space-y-4">
-                                <!-- Preview content will be generated here -->
-                            </div>
-                        </div>
-                    </div>
+                    
                 </div>
             </main>
         </div>

@@ -536,7 +536,7 @@
                         <i class="fas fa-link"></i>
                     </button>
                     <button onclick="deleteSurvey(${survey.id})" class="text-gray-400 hover:text-red-600" title="Archive Survey">
-                        <i class="fas fa-trash"></i>
+                        <i class="fas fa-box-archive"></i>
                     </button>`;
 
                 // --- THE FULL TABLE ROW 
@@ -637,37 +637,41 @@
         }
 
         function renderOffices() {
-                const container = document.getElementById('officesList');
-                if (offices.length === 0) {
-                    container.innerHTML = `<p class="text-gray-500 text-center py-4">${isShowingArchivedOffices ? 'No archived offices found.' : 'No active offices found.'}</p>`;
-                    return;
-                }
-
-                container.innerHTML = offices.map(office => {
-                    // Use the global state variable to decide which buttons to show
-                    const buttons = isShowingArchivedOffices
-                        ? `<!-- Reactivate button -->
-                        <button onclick="reactivateOffice(${office.id})" class="text-green-600 hover:text-green-800" title="Reactivate Office">
-                            <i class="fas fa-undo-alt"></i>
-                        </button>`
-                        : `<!-- Edit and Archive buttons -->
-                        <button onclick="openOfficeEditModal(${office.id})" class="text-blue-600 hover:text-blue-800" title="Edit Office">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button onclick="deleteOffice(${office.id})" class="text-red-600 hover:text-red-800" title="Archive Office">
-                            <i class="fas fa-trash"></i>
-                        </button>`;
-
-                    return `
-                        <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                            <div>
-                                <div class="font-medium text-gray-900">${office.name}</div>
-                                <div class="text-sm text-gray-500">Code: ${office.code}</div>
-                            </div>
-                            <div class="flex space-x-4">${buttons}</div>
-                        </div>`;
-                }).join('');
+            const container = document.getElementById('officesList');
+            if (offices.length === 0) {
+                container.innerHTML = `<p class="text-gray-500 text-center py-4">${isShowingArchivedOffices ? 'No archived offices found.' : 'No active offices found.'}</p>`;
+                return;
             }
+
+            container.innerHTML = offices.map(office => {
+                // --- DYNAMIC BUTTON LOGIC ---
+                const buttons = isShowingArchivedOffices
+                    ? `<!-- Archived View Buttons -->
+                    <button onclick="reactivateOffice(${office.id})" class="text-gray-400 hover:text-green-600" title="Reactivate Office">
+                        <i class="fas fa-undo-alt"></i>
+                    </button>
+                    <button onclick="permanentlyDeleteOffice(${office.id})" class="text-gray-400 hover:text-red-600" title="Permanently Delete">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>`
+                    : `<!-- Active View Buttons -->
+                    <button onclick="openOfficeEditModal(${office.id})" class="text-blue-600 hover:text-blue-800" title="Edit Office">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button onclick="deleteOffice(${office.id})" class="text-orange-600 hover:text-orange-800" title="Archive Office">
+                        <i class="fas fa-box-archive"></i> <!-- Using the archive icon -->
+                    </button>`;
+
+                return `
+                    <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                        <div>
+                            <div class="font-medium text-gray-900">${office.name}</div>
+                            <div class="text-sm text-gray-500">Code: ${office.code}</div>
+                        </div>
+                        <div class="flex space-x-4">${buttons}</div>
+                    </div>
+                `;
+            }).join('');
+        }
 
         function renderServices() {
             const container = document.getElementById('servicesList');
@@ -692,7 +696,7 @@
                         <i class="fas fa-edit"></i>
                     </button>
                     <button onclick="deleteService(${service.id})" class="text-red-600 hover:text-red-800" title="Archive Service">
-                        <i class="fas fa-trash"></i>
+                        <i class="fas fa-box-archive"></i>
                     </button>`;
 
                 return `
@@ -707,25 +711,53 @@
         }
         
         // Reactivate Office Function
-        async function reactivateOffice(officeId) {
+         async function reactivateOffice(officeId) {
             try {
-                // Use the PUT request, as we are UPDATING the state of the office
-                const response = await fetch(`api/offices.php?action=reactivate&id=${officeId}`, {
-                    method: 'PUT'
+                await showConfirmationModal({
+                    title: 'Reactivate Office',
+                    message: 'This will make the office available for new surveys again.',
+                    actionText: 'Yes, Reactivate',
+                    destructive: false
+                });
+
+                const response = await fetch(`api/offices.php?id=${officeId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'reactivate' })
                 });
                 const result = await response.json();
 
                 if (result.success) {
-                    showToastNotification('Office reactivated successfully!', 'success');
-                    // Reload the archived list so the item disappears from it
-                    loadOffices(true); 
+                    showToastNotification('Office reactivated!', 'success');
+                    loadOffices(); // Reload the list
                 } else {
                     showToastNotification(result.message, 'error');
                 }
-            } catch (error) {
-                console.error('Error reactivating office:', error);
-                showToastNotification('A network error occurred.', 'error');
-            }
+            } catch (error) { if (error) console.error(error); }
+        }
+
+        async function permanentlyDeleteOffice(officeId) {
+            try {
+                await showConfirmationModal({
+                    title: 'PERMANENTLY DELETE OFFICE',
+                    message: 'WARNING: This is irreversible. It may fail if services or surveys are still linked to this office.',
+                    actionText: 'Yes, Delete Forever',
+                    destructive: true
+                });
+
+                // We will create a new, separate API file for this dangerous action
+                const response = await fetch(`api/permanent-delete-office.php?id=${officeId}`, {
+                    method: 'DELETE'
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    showToastNotification('Office permanently deleted.', 'success');
+                    loadOffices(); // Reload the list
+                } else {
+                    showToastNotification(result.message, 'error');
+                }
+            } catch (error) { if (error) console.error(error); }
         }
 
 
@@ -952,7 +984,7 @@
             }
         }
 
-        // ** ADD ** this function for archiving (soft-deleting)
+        // this function for archiving (soft-deleting)
         async function deleteService(serviceId) {
             try {
                 await showConfirmationModal({

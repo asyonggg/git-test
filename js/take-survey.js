@@ -163,18 +163,37 @@ async function fetchAndRenderSurvey(surveyId, respondentData) {
             e.preventDefault();
             const formData = new FormData(e.target);
             const answers = [];
-            // The logic to gather answers needs to be smarter now
+
+            // Loop through the questions in our state to ensure we capture all of them
             survey.questions_json.questions.forEach(q => {
                 const key = `q_${q.id}`;
-                let answer = formData.get(key);
-                // For checkboxes, we get all selected values
-                if (q.type === 'checkbox') {
-                    answer = formData.getAll(key);
-                }
-                answers.push({ question_id: q.id, text: q.text, answer: answer });
+                // .get() works perfectly for text, textarea, and radio buttons
+                const answerValue = formData.get(key); 
+                
+                answers.push({ 
+                    question_id: q.id, 
+                    text: q.text, // Saving the question text with the answer is good for analysis
+                    answer: answerValue || null // Save null if no answer was given
+                });
             });
             
-            const submissionData = { survey_id: surveyId, respondent: respondentData, answers: answers };
+             const submissionData = { 
+                survey_id: surveyId, 
+                respondent: respondentData, 
+                answers: answers 
+            };
+            
+            // Check if all required questions have been answered
+            const missingRequired = answers.some(a => {
+                const question = survey.questions_json.questions.find(q => q.id === a.question_id);
+                return question.required && (a.answer === null || a.answer === '');
+            });
+
+            if (missingRequired) {
+                alert("Please answer all required questions (marked with *).");
+                return; // Stop the submission
+            }
+
             submitSurveyResponse(submissionData);
         };
     }
@@ -211,14 +230,15 @@ async function fetchAndRenderSurvey(surveyId, respondentData) {
 
             switch (question.type) {
                 case 'likert':
+                    // For a Likert scale, 5 radio buttons.
                     return `
-                        <div class="flex flex-wrap justify-between items-center text-center text-sm text-gray-600">
+                        <div class="flex flex-wrap justify-between items-center text-center text-sm text-gray-600 px-2">
                             <span>Poor</span>
-                            <div class="flex space-x-2">
+                            <div class="flex space-x-2 md:space-x-4">
                                 ${[1,2,3,4,5].map(i => `
-                                    <label class="flex flex-col items-center">
-                                        ${i}
-                                        <input type="radio" name="${name}" value="${i}" class="mt-1" ${required}>
+                                    <label class="flex flex-col items-center cursor-pointer">
+                                        <span class="mb-1">${i}</span>
+                                        <input type="radio" name="${name}" value="${i}" class="h-5 w-5" ${required}>
                                     </label>
                                 `).join('')}
                             </div>
@@ -226,27 +246,12 @@ async function fetchAndRenderSurvey(surveyId, respondentData) {
                         </div>`;
 
                 case 'text':
-                    return `<input type="text" name="${name}" class="w-full p-2 border border-gray-300 rounded-lg" ${required}>`;
+                    return `<input type="text" name="${name}" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-jru-blue" ${required}>`;
 
                 case 'textarea':
-                    return `<textarea name="${name}" rows="4" class="w-full p-2 border border-gray-300 rounded-lg" ${required}></textarea>`;
+                    return `<textarea name="${name}" rows="4" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-jru-blue" ${required}></textarea>`;
                 
-                case 'multiple': // Radio buttons
-                    return (question.options || []).map(opt => `
-                        <label class="flex items-center space-x-3 p-2 border rounded-lg mb-2">
-                            <input type="radio" name="${name}" value="${opt.value}" class="h-4 w-4" ${required}>
-                            <span>${opt.label}</span>
-                        </label>
-                    `).join('');
-
-                case 'checkbox':
-                    return (question.options || []).map(opt => `
-                        <label class="flex items-center space-x-3 p-2 border rounded-lg mb-2">
-                            <input type="checkbox" name="${name}" value="${opt.value}" class="h-4 w-4 rounded">
-                            <span>${opt.label}</span>
-                        </label>
-                    `).join('');
-
+               
                 default:
                     return `<p class="text-red-500">Error: Unknown question type "${question.type}"</p>`;
             }
