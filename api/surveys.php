@@ -4,7 +4,7 @@ header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
 
-if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+if ($_SERVER["REQUEST_METHOD"] == 'OPTIONS') {
   http_response_code(200);
   exit();
 }
@@ -34,7 +34,7 @@ $method = $_SERVER['REQUEST_METHOD'];
 error_log("API a/surveys.php received a request with method: " . $method);
 
 switch($method) {
-   case 'GET':
+   case "GET":
         try {
             // Check if the request is for a SINGLE survey 
             if (isset($_GET['id']) && is_numeric($_GET['id'])) {
@@ -91,7 +91,7 @@ switch($method) {
         }
         break;
 
-    case 'POST':
+    case "POST":
         // handle the creation of survey, Get the data sent from the survey builder's JavaScript
         $data = json_decode(file_get_contents("php://input"), true);
 
@@ -129,8 +129,8 @@ switch($method) {
         }
     break;
     
-    case 'PUT':
-        // The ID from the URL is always required for any PUT action.
+    case "PUT":
+        //ID from URL is required for any Update action
         if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
             respond(false, "A valid Survey ID is required.", null, 400);
         }
@@ -191,7 +191,7 @@ switch($method) {
         }
     break;
 
-    case 'DELETE':
+    case "DELETE":
         //Handlde soft deletion or archiving a surey
         if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
             respond(false, "A valid Survey is required for archival.", null, 400);

@@ -100,68 +100,7 @@ switch($method) {
     break;
 
     case "PUT":
-        // First, check if the request is to reactivate an office.
-        if (isset($_GET['action']) && $_GET['action'] == 'reactivate') {
-            
-            // --- THIS IS THE REACTIVATE LOGIC ---
-
-            if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
-                respond(false, "A valid Office ID is required for reactivation.", null, 400);
-            }
-            $id = intval($_GET['id']);
-
-            try {
-                // The query should simply set is_active back to 1.
-                $query = "UPDATE offices SET is_active = 1 WHERE id = :id";
-                $stmt = $db->prepare($query);
-                $stmt->bindParam(':id', $id);
-
-                if ($stmt->execute()) {
-                    respond(true, "Office reactivated successfully");
-                } else {
-                    respond(false, "Failed to reactivate office.", null, 500);
-                }
-            } catch (PDOException $e) {
-                respond(false, "Database error during reactivation: " . $e->getMessage(), null, 500);
-            }
-
-        } else {
-
-            
-            if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
-                respond(false, "A valid Office ID is required for update.", null, 400);
-            }
-            $id = intval($_GET['id']);
-
-            // Get the data from the request body.
-            $data = json_decode(file_get_contents("php://input"), true);
-
-            // Validate the data from the body.
-            if (!isset($data["name"]) || empty($data["name"]) || !isset($data["code"]) || empty($data["code"])) {
-                respond(false, "Name and code are required for update.", null, 400);
-            }
-
-            try {
-                $query = "UPDATE offices 
-                        SET name = :name, code = :code, description = :description 
-                        WHERE id = :id";
-                $stmt = $db->prepare($query);
-
-                $stmt->bindParam(':name', $data['name']);
-                $stmt->bindParam(':code', $data['code']);
-                $stmt->bindParam(':description', $data['description']);
-                $stmt->bindParam(':id', $id);
-
-                if ($stmt->execute()) {
-                    respond(true, "Office updated successfully");
-                } else {
-                    respond(false, "Failed to update office.", null, 500);
-                }
-            } catch(PDOException $e) {
-                respond(false, "Database error while updating office: " . $e->getMessage(), null, 500);
-            }
-        }
-            break;
+       
 
     case "DELETE" :
         // Get ID from URL query string

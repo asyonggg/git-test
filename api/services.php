@@ -34,7 +34,7 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 switch($method) {
     //READ, Retireve or display
-   case 'GET':
+   case "GET":
         try {
             $active_state = (isset($_GET['show_archived_services']) && $_GET['show_archived_services'] == 'true') ? 0 : 1;
             
@@ -60,7 +60,7 @@ switch($method) {
         }
         break;
         
-    case 'POST':
+    case "POST":
         //CREATE or Add
         $data = json_decode(file_get_contents("php://input"), true);
         
@@ -86,7 +86,7 @@ switch($method) {
             respond(false, "Error creating service: " . $e->getMessage(), null, 500);
         }
 
-    case 'PUT':
+    case "PUT":
         if (isset($_GET['action']) && $_GET['action'] == 'reactivate') {
             if (!isset($_GET['id'])) { respond(false, "ID required", null, 400); }
             $id = intval($_GET['id']);
@@ -111,7 +111,7 @@ switch($method) {
         }
         break;
 
-    case 'DELETE':
+    case "DELETE":
         if (!isset($_GET['id'])) { respond(false, "ID required", null, 400); }
         $id = intval($_GET['id']);
         $query = "UPDATE services SET is_active = 0 WHERE id = :id";

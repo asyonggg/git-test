@@ -19,7 +19,7 @@ try {
 }
 
 // This script only handles DELETE requests
-if ($_SERVER['REQUEST_METHOD'] == 'DELETE') {
+if ($_SERVER["REQUEST_METHOD"] == 'DELETE') {
     if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
         respond(false, "A valid Survey ID is required for deletion.", null, 400);
     }

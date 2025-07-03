@@ -529,9 +529,10 @@
                     <button onclick="editSurvey(${survey.id})" class="text-gray-400 hover:text-jru-blue" title="Edit Survey">
                         <i class="fas fa-edit"></i>
                     </button>
-                    <button onclick="viewSurvey(${survey.id})" class="text-gray-400 hover:text-green-600" title="View Results">
+                    <!-- View Result 
+                     <button onclick="viewSurvey(${survey.id})" class="text-gray-400 hover:text-green-600" title="View Results">
                         <i class="fas fa-chart-bar"></i>
-                    </button>
+                    </button> -->
                     <button onclick="getSurveyLink(${survey.id})" class="text-gray-400 hover:text-blue-600" title="Get Shareable Link">
                         <i class="fas fa-link"></i>
                     </button>
@@ -1156,9 +1157,10 @@
             window.location.href = url;
         }
 
-        function viewSurvey(surveyId) {
-            window.open(`survey-preview.php?id=${surveyId}`, '_blank');
-        }
+       
+       //  function viewSurvey(surveyId) {
+        //    window.open(`survey-preview.php?id=${surveyId}`, '_blank');
+        //}
 
         async function deleteSurvey(surveyId) {
             try {
