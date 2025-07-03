@@ -516,7 +516,35 @@
         }
 
         // Render preview
-        
+        function renderPreview() {
+            const surveyTitle = document.getElementById('surveyTitle').value;
+            const surveyOffice = document.getElementById('surveyOffice').selectedOptions[0].text;
+            const surveyService = document.getElementById('surveyService').selectedOptions[0].text;
+            
+            let previewHTML = `
+                <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <h3 class="font-semibold text-blue-900 text-sm">${surveyTitle}</h3>
+                    <p class="text-xs text-blue-700">${surveyOffice} - ${surveyService}</p>
+                </div>
+            `;
+            
+            surveyQuestions.forEach((question, index) => {
+                previewHTML += `
+                    <div class="mb-4 p-3 border border-gray-200 rounded-lg">
+                        <div class="flex items-center mb-2">
+                            <span class="text-xs font-medium text-gray-500 mr-2">${index + 1}.</span>
+                            <span class="text-xs font-medium text-gray-700">${question.title || 'Question'}</span>
+                            ${question.required ? '<span class="text-red-500 text-xs ml-1">*</span>' : ''}
+                        </div>
+                        <p class="text-xs text-gray-600 mb-2">${question.text}</p>
+                        ${renderPreviewInput(question)}
+                    </div>
+                `;
+            });
+            
+            surveyPreview.innerHTML = previewHTML;
+        }
+
 
         // Render preview input based on question type
         function renderPreviewInput(question) {
@@ -567,7 +595,6 @@
                     return '<div class="w-full h-6 border border-gray-300 rounded bg-gray-50"></div>';
             }
         }
-
         
         // Setup sortable functionality
         function setupSortable() {
@@ -586,7 +613,7 @@
                     
                     // Re-render
                     renderQuestions();
-                   // renderPreview();
+                   renderPreview();
                 }
             });
         }
@@ -655,7 +682,7 @@
             }
             
             renderQuestions();
-            renderPreview();
+           // renderPreview();
             closeQuestionModal();
         }
 
@@ -670,7 +697,7 @@
                 const index = surveyQuestions.findIndex(q => q.id === questionId);
                 surveyQuestions.splice(index + 1, 0, duplicated);
                 renderQuestions();
-                renderPreview();
+               // renderPreview();
             }
         }
 
@@ -678,7 +705,7 @@
             if (confirm('Are you sure you want to delete this question?')) {
                 surveyQuestions = surveyQuestions.filter(q => q.id !== questionId);
                 renderQuestions();
-                renderPreview();
+              //  renderPreview();
             }
         }
 
@@ -694,7 +721,7 @@
             // Add more template options here
             
             renderQuestions();
-            renderPreview();
+           // renderPreview();
         }
 
         function openTemplateModal() {
