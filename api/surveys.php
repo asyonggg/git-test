@@ -29,7 +29,7 @@ try {
     respond(false, "Database connection failed", null, 500);
 }
 
-$method = $_SERVER['REQUEST_METHOD'];
+$method = $_SERVER["REQUEST_METHOD"];
 
 error_log("API a/surveys.php received a request with method: " . $method);
 
@@ -38,7 +38,6 @@ switch($method) {
         try {
             // Check if the request is for a SINGLE survey 
             if (isset($_GET['id']) && is_numeric($_GET['id'])) {
-                
             //If an ID is provided, fetch that specific survey
                 $id = intval($_GET['id']);
                 $query = "SELECT s.*, o.name as office_name, se.name as service_name 
@@ -129,49 +128,32 @@ switch($method) {
         }
     break;
     
-    case "PUT":
-        //ID from URL is required for any Update action
+     case "PUT":
         if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
             respond(false, "A valid Survey ID is required.", null, 400);
         }
         $id = intval($_GET['id']);
-        
-        // Get the data from the request body.
         $data = json_decode(file_get_contents("php://input"), true);
-        // Determine the action. If no action is specified, it's a standard update.
         $action = $data['action'] ?? 'update_details'; 
 
         try {
-            if ($action == 'publish') {
-                // --- PUBLISH LOGIC ---
-                $query = "UPDATE surveys SET status = 'active' WHERE id = :id AND status = 'draft'";
+            if ($action == 'change_status') {
+                $newStatus = $data['status'] ?? null;
+                if (!in_array($newStatus, ['draft', 'active'])) {
+                    respond(false, "Invalid status provided.", null, 400);
+                }
+                $query = "UPDATE surveys SET status = :status WHERE id = :id";
                 $stmt = $db->prepare($query);
+                $stmt->bindValue(':status', $newStatus);
                 $stmt->bindValue(':id', $id);
                 $stmt->execute();
-                if ($stmt->rowCount() > 0) {
-                    respond(true, "Survey published successfully.");
-                } else {
-                    respond(false, "Survey could not be published (already active or archived).", null, 409);
-                }
-
-            } elseif ($action == 'reactivate') {
-                // --- REACTIVATE LOGIC ---
-                $query = "UPDATE surveys SET status = 'draft' WHERE id = :id AND status = 'archived'";
-                $stmt = $db->prepare($query);
-                $stmt->bindValue(':id', $id);
-                $stmt->execute();
-                if ($stmt->rowCount() > 0) {
-                    respond(true, "Survey reactivated successfully.");
-                } else {
-                    respond(false, "Survey could not be reactivated.", null, 409);
-                }
+                respond(true, "Survey status updated to '{$newStatus}'.");
 
             } elseif ($action == 'update_details') {
-            //Logic for survey details update
                 if (empty($data['title']) || empty($data['office_id']) || empty($data['service_id'])) {
-                    respond(false, "Title, office, and service are required for update.", null, 400);
+                    respond(false, "Title, office, and service are required.", null, 400);
                 }
-                $query = "UPDATE surveys SET title = :title, office_id = :office_id, service_id = :service_id, questions_json = :questions_json WHERE id = :id";
+                $query = "UPDATE surveys SET title = :title, office_id = :office_id, service_id = :service_id, questions_json = :questions_json WHERE id = :id AND status = 'draft'";
                 $stmt = $db->prepare($query);
                 $questions_json = json_encode($data['questions']);
                 $stmt->bindValue(':title', $data['title']);
@@ -180,10 +162,12 @@ switch($method) {
                 $stmt->bindValue(':questions_json', $questions_json);
                 $stmt->bindValue(':id', $id);
                 $stmt->execute();
-                respond(true, "Survey draft updated successfully.");
-                
+                if ($stmt->rowCount() > 0) {
+                    respond(true, "Survey draft updated successfully.");
+                } else {
+                    respond(false, "Update failed. Survey may be published or does not exist.", 409);
+                }
             } else {
-                // If the action is something unknown
                 respond(false, "Invalid action specified.", null, 400);
             }
         } catch (PDOException $e) {

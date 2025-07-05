@@ -18,6 +18,16 @@
             }
         }
     </script>
+    <style>
+    .emoji-label.is-pressing { /* When the user is pressing down on an emoji label */
+        transform: scale(1.25); /* Make it even bigger */
+        transition: transform 0.1s ease-in;
+    }
+    .emoji-label.is-pressing .number-popup { /* Make the number pop-up visible and move it slightly when pressed */
+        opacity: 1;
+        transform: translateY(-5px);
+    }
+</style>
 </head>
 <body class="bg-gray-100">
 

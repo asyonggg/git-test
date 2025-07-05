@@ -170,7 +170,7 @@
                         </button>
                         <button id="saveDraft" class="border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors flex items-center">
                             <i class="fas fa-save mr-2"></i>
-                            Save Draft
+                            Save
                         </button>
                         <button id="publishSurvey" class="bg-jru-blue text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors flex items-center">
                             <i class="fas fa-rocket mr-2"></i>
@@ -294,91 +294,69 @@
                 
                 <div class="p-6">
                     <form id="questionForm">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 pb-6 mb-6 border-b border-gray-200">
+                        
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Question Type</label>
-                                <select id="questionType" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-jru-blue">
-                                    <option value="likert">Likert Scale (1-5)</option>
-                                    <option value="text">Text Response</option>
-                                    <option value="textarea">Long Text</option>
-                                    <option value="multiple">Multiple Choice</option>
-                                    <option value="checkbox">Checkbox</option>
-                                    <option value="rating">Star Rating</option>
-                                </select>
+                                <label for="questionType" class="block text-sm font-medium text-gray-700">Question Type</label>
+                                <!-- FIX: Added padding, background, and appearance-none for a cleaner look -->
+                                <div class="relative mt-1">
+                                    <select id="questionType" class="w-full pl-3 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-jru-blue bg-white appearance-none">
+                                        <option value="likert">Emoji Scale (1-5)</option>
+                                        <option value="rating">Star Rating (1-5)</option>
+                                        <option value="textarea">Text Response</option>
+                                    </select>
+                                    <!-- FIX: Added a custom chevron icon for a professional dropdown style -->
+                                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                                        <i class="fas fa-chevron-down text-xs"></i>
+                                    </div>
+                                </div>
                             </div>
+                            
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Required</label>
-                                <div class="flex items-center space-x-4 mt-2">
-                                    <label class="flex items-center">
-                                        <input type="radio" name="required" value="true" class="mr-2" checked>
-                                        <span class="text-sm">Required</span>
+                                <label class="block text-sm font-medium text-gray-700">Required</label>
+                                <!-- FIX: Used flexbox and alignment classes to perfectly align radio buttons with their text -->
+                                <div class="flex items-center space-x-6 mt-2">
+                                    <label class="flex items-center cursor-pointer">
+                                        <input type="radio" name="required" value="true" class="h-4 w-4 text-jru-blue focus:ring-jru-blue border-gray-300" checked>
+                                        <span class="ml-2 text-sm text-gray-800">Required</span>
                                     </label>
-                                    <label class="flex items-center">
-                                        <input type="radio" name="required" value="false" class="mr-2">
-                                        <span class="text-sm">Optional</span>
+                                    <label class="flex items-center cursor-pointer">
+                                        <input type="radio" name="required" value="false" class="h-4 w-4 text-jru-blue focus:ring-jru-blue border-gray-300">
+                                        <span class="ml-2 text-sm text-gray-800">Optional</span>
                                     </label>
                                 </div>
                             </div>
+
                         </div>
 
-                        <div class="mb-6">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Question Text</label>
-                            <textarea id="questionText" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-jru-blue" placeholder="Enter your question here..."></textarea>
-                        </div>
-
-                        <div class="mb-6">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Help Text (Optional)</label>
-                            <input type="text" id="questionHelp" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-jru-blue" placeholder="Additional instructions or context">
-                        </div>
-
-                        <!-- Options for Multiple Choice/Checkbox -->
-                        <div id="optionsSection" class="mb-6 hidden">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Answer Options</label>
-                            <div id="optionsList" class="space-y-2">
-                                <!-- Options will be added dynamically -->
+                        <div class="space-y-6">
+                            <div>
+                                <label for="questionTitle" class="block text-sm font-medium text-gray-900">Question Title</label>
+                                <p class="text-xs text-gray-500 mt-1">A short label for reports and analytics.</p>
+                                <input type="text" id="questionTitle" class="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg" placeholder="e.g., Staff Courtesy, Service Speed">
                             </div>
-                            <button type="button" id="addOption" class="mt-2 text-jru-blue hover:text-blue-800 text-sm">
-                                <i class="fas fa-plus mr-1"></i>
-                                Add Option
-                            </button>
-                        </div>
 
-                        <!-- Likert Scale Customization -->
-                        <div id="likertSection" class="mb-6">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Scale Labels</label>
-                            <div class="grid grid-cols-5 gap-2">
-                                <input type="text" placeholder="1 - Poor" class="px-2 py-1 border border-gray-300 rounded text-sm">
-                                <input type="text" placeholder="2 - Fair" class="px-2 py-1 border border-gray-300 rounded text-sm">
-                                <input type="text" placeholder="3 - Good" class="px-2 py-1 border border-gray-300 rounded text-sm">
-                                <input type="text" placeholder="4 - Very Good" class="px-2 py-1 border border-gray-300 rounded text-sm">
-                                <input type="text" placeholder="5 - Excellent" class="px-2 py-1 border border-gray-300 rounded text-sm">
+                            <div>
+                                <label for="questionText" class="block text-sm font-medium text-gray-900">Full Question Text</label>
+                                <p class="text-xs text-gray-500 mt-1">This is the complete question that will be shown to the respondent.</p>
+                                <textarea id="questionText" rows="3" class="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg" placeholder="e.g., How would you rate the professionalism and courtesy of the staff?"></textarea>
+                            </div>
+
+                            <div>
+                                <label for="questionHelp" class="block text-sm font-medium text-gray-900">Help Text <span class="font-normal text-gray-500">(Optional)</span></label>
+                                <p class="text-xs text-gray-500 mt-1">Provide extra context or instructions for the user.</p>
+                                <input type="text" id="questionHelp" class="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg" placeholder="e.g., Please consider their attitude and responsiveness.">
                             </div>
                         </div>
 
-                        <!-- Advanced Settings -->
-                        <div class="mb-6">
-                            <h4 class="text-sm font-medium text-gray-700 mb-3">Advanced Settings</h4>
-                            <div class="space-y-3">
-                                <label class="flex items-center">
-                                    <input type="checkbox" id="randomizeOptions" class="mr-2">
-                                    <span class="text-sm text-gray-700">Randomize answer options</span>
-                                </label>
-                                <label class="flex items-center">
-                                    <input type="checkbox" id="allowOther" class="mr-2">
-                                    <span class="text-sm text-gray-700">Allow "Other" option</span>
-                                </label>
-                                <label class="flex items-center">
-                                    <input type="checkbox" id="showInPreview" class="mr-2" checked>
-                                    <span class="text-sm text-gray-700">Show in preview</span>
-                                </label>
-                            </div>
-                        </div>
-
-                        <div class="flex justify-end space-x-4">
-                            <button type="button" id="cancelQuestion" class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+                    
+                        <div class="flex justify-end space-x-3 mt-8 pt-6 border-t border-gray-200">
+                            
+                            <button type="button" id="cancelQuestion" class="px-6 py-2 bg-white border border-gray-300 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors">
                                 Cancel
                             </button>
-                            <button type="submit" class="px-6 py-2 bg-jru-blue text-white rounded-lg hover:bg-blue-800 transition-colors">
+                        
+                            <button type="submit" class="px-6 py-2 bg-jru-blue text-white rounded-lg text-sm font-semibold hover:bg-blue-800 transition-colors">
                                 Save Question
                             </button>
                         </div>

@@ -1,19 +1,19 @@
 document.addEventListener('DOMContentLoaded', () => {
     // 1. Get the survey ID from the page's URL.
-    const urlParams = new URLSearchParams(window.location.search);
-    const surveyId = urlParams.get('id');
+        const urlParams = new URLSearchParams(window.location.search);
+        const surveyId = urlParams.get('id');
 
-    // 2. Check if an ID exists.
-    if (!surveyId) {
-        renderError("No survey ID was provided. Please use a valid survey link.");
-        return; // Stop if no ID.
-    }
-    
-    // 3. Start the process by showing the very first screen.
-    renderIdentificationStage(surveyId);
-});
+        // 2. Check if an ID exists.
+        if (!surveyId) {
+            renderError("No survey ID was provided. Please use a valid survey link.");
+            return; // Stop if no ID.
+        }
+        
+        // 3. Start the process by showing the very first screen.
+        renderIdentificationStage(surveyId);
+    });
 
-const surveyContainer = document.getElementById('surveyContainer');
+    const surveyContainer = document.getElementById('surveyContainer');
 
 
 // --- STAGE 1: Render the "Who are you?" choice ---
@@ -32,6 +32,63 @@ function renderIdentificationStage(surveyId) {
     // Attach event listeners to the new buttons.
     document.getElementById('isStudentBtn').onclick = () => renderStudentForm(surveyId);
     document.getElementById('isVisitorBtn').onclick = () => renderVisitorForm(surveyId);
+
+    document.querySelectorAll('.star-rating').forEach(starGroup => {
+    const stars = starGroup.querySelectorAll('i');
+    const hiddenInput = starGroup.nextElementSibling; // The hidden input right after the stars
+
+    starGroup.addEventListener('mouseover', (e) => {
+        if (e.target.matches('i')) {
+            const hoverValue = e.target.dataset.value;
+            stars.forEach(star => {
+                star.classList.toggle('fas', star.dataset.value <= hoverValue); // Solid star
+                star.classList.toggle('far', star.dataset.value > hoverValue);  // Outline star
+                star.classList.toggle('text-yellow-400', star.dataset.value <= hoverValue);
+                star.classList.toggle('text-gray-300', star.dataset.value > hoverValue);
+            });
+        }
+    });
+
+    starGroup.addEventListener('mouseout', () => {
+        // On mouse out, revert to the selected state
+        const selectedValue = starGroup.dataset.selectedValue || 0;
+        stars.forEach(star => {
+            star.classList.toggle('fas', star.dataset.value <= selectedValue);
+            star.classList.toggle('far', star.dataset.value > selectedValue);
+            star.classList.toggle('text-yellow-400', star.dataset.value <= selectedValue);
+            star.classList.toggle('text-gray-300', star.dataset.value > selectedValue);
+        });
+    });
+
+    starGroup.addEventListener('click', (e) => {
+        if (e.target.matches('i')) {
+            const selectedValue = e.target.dataset.value;
+            starGroup.dataset.selectedValue = selectedValue; // Store the selected value
+            hiddenInput.value = selectedValue; // UPDATE THE HIDDEN INPUT'S VALUE
+        }
+    });
+});
+
+        const emojiLabels = document.querySelectorAll('.emoji-label');
+
+emojiLabels.forEach(label => {
+    // When the mouse button is PRESSED DOWN
+    label.addEventListener('mousedown', () => {
+        // Add our special CSS class to trigger the effect
+        label.classList.add('is-pressing');
+    });
+
+    // When the mouse button is RELEASED
+    label.addEventListener('mouseup', () => {
+        // Remove the class to end the effect
+        label.classList.remove('is-pressing');
+    });
+
+    // If the mouse moves away while still being pressed, also end the effect
+    label.addEventListener('mouseleave', () => {
+        label.classList.remove('is-pressing');
+    });
+});
 }
 
 
@@ -199,7 +256,6 @@ async function fetchAndRenderSurvey(surveyId, respondentData) {
     }
 
 
-
     // --- STAGE 5: Submit the final response to the API ---
     async function submitSurveyResponse(submissionData) {
         surveyContainer.innerHTML = `<h1 class="text-2xl font-bold text-gray-900 mb-2">Submitting...</h1>`;
@@ -229,31 +285,59 @@ async function fetchAndRenderSurvey(surveyId, respondentData) {
             const required = question.required ? 'required' : '';
 
             switch (question.type) {
-                case 'likert':
-                    // For a Likert scale, 5 radio buttons.
+                case 'likert': // Emoji Scale
+                    const emojis = [
+                        { emoji: '😍', value: 5, label: 'Excellent' },
+                        { emoji: '😊', value: 4, label: 'Very Good' },
+                        { emoji: '😐', value: 3, label: 'Good' },
+                        { emoji: '😞', value: 2, label: 'Fair' },
+                        { emoji: '😠', value: 1, label: 'Poor' }
+                    ];
+
                     return `
-                        <div class="flex flex-wrap justify-between items-center text-center text-sm text-gray-600 px-2">
-                            <span>Poor</span>
-                            <div class="flex space-x-2 md:space-x-4">
-                                ${[1,2,3,4,5].map(i => `
-                                    <label class="flex flex-col items-center cursor-pointer">
-                                        <span class="mb-1">${i}</span>
-                                        <input type="radio" name="${name}" value="${i}" class="h-5 w-5" ${required}>
-                                    </label>
-                                `).join('')}
-                            </div>
-                            <span>Excellent</span>
+                        <div class="flex justify-center space-x-2 md:space-x-4">
+                            ${emojis.map(item => `
+                                <!-- Each emoji is a 'label' which is good for accessibility -->
+                                <label class="emoji-label flex flex-col items-center cursor-pointer text-center group transition-transform duration-200 ease-in-out hover:scale-110">
+                                    
+                                    <!-- Container for the emoji and the number pop-up -->
+                                    <div class="relative">
+                                        <span class="text-4xl md:text-5xl">${item.emoji}</span>
+                                        
+                                        <!-- The number that appears on press. Starts hidden. -->
+                                        <span class="absolute -top-4 -right-2 text-xl font-bold text-jru-blue opacity-0 transition-all duration-200 number-popup">
+                                            ${item.value}
+                                        </span>
+                                    </div>
+
+                                    <!-- The text label that appears on hover -->
+                                    <span class="mt-2 text-xs text-gray-500 font-bold opacity-0 group-hover:opacity-100 transition-opacity">
+                                        ${item.label}
+                                    </span>
+                                    
+                                    <!-- The actual radio button, visually hidden -->
+                                    <input type="radio" name="${name}" value="${item.value}" class="sr-only peer" ${required}>
+                                    
+                                    <!-- The checkmark indicator -->
+                                    <div class="w-4 h-4 rounded-full border-2 border-gray-300 mt-2 peer-checked:bg-jru-blue peer-checked:border-jru-blue"></div>
+                                </label>
+                            `).join('')}
                         </div>`;
 
-                case 'text':
-                    return `<input type="text" name="${name}" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-jru-blue" ${required}>`;
+                case 'rating': //Star Rating
+                    return `
+                        <div class="flex justify-center items-center text-4xl text-gray-300 star-rating">
+                            ${[5,4,3,2,1].map(i => `<i class="far fa-star cursor-pointer p-1" data-value="${i}"></i>`).join('')}
+                        </div>
+                        <input type="radio" name="${name}" value="" class="hidden" ${required}>`;
 
-                case 'textarea':
-                    return `<textarea name="${name}" rows="4" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-jru-blue" ${required}></textarea>`;
+                case 'textarea': // This is our Text Entry for sentiments
+                    return `<textarea name="${name}" rows="4" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-jru-blue" placeholder="Please share any additional comments or suggestions..."></textarea>`;
+
+                // We are removing the simple 'text' input for now to keep it focused.
                 
-               
                 default:
-                    return `<p class="text-red-500">Error: Unknown question type "${question.type}"</p>`;
+                    return `<p class="text-red-500 italic">This question type is not currently supported.</p>`;
             }
         }
 

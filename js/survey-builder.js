@@ -1,5 +1,4 @@
-// Sidebar toggle functionality
-        const sidebar = document.getElementById('sidebar');
+        const sidebar = document.getElementById('sidebar'); // Sidebar toggle functionality
         const sidebarToggle = document.getElementById('sidebarToggle');
         const logoContainer = document.getElementById('logoContainer');
         const menuTexts = document.querySelectorAll('.menu-text');
@@ -51,49 +50,9 @@
         let currentEditingQuestion = null;
         let offices = []; // To store office data from API
         let services = []; // To store service data from API
-
         let toastTimer; 
 
-        function showToastNotification(message, type = 'success') {
-            // toast notif element in survey builder
-            const toast = document.getElementById('toastNotification'); 
-            
-            // Safety check in case the element doesn't exist on this page
-            if (!toast) {
-                alert(`${type.toUpperCase()}: ${message}`); // Fallback to a simple alert
-                return;
-            }
-            
-            const toastIcon = document.getElementById('toastIcon');
-            const toastMessage = document.getElementById('toastMessage');
-
-            clearTimeout(toastTimer);
-            toastMessage.textContent = message;
-
-            if (type === 'success') {
-                toast.classList.remove('bg-red-500');
-                toast.classList.add('bg-green-500');
-                toastIcon.className = 'fas fa-check-circle mr-3 text-xl';
-            } else { // 'error'
-                toast.classList.remove('bg-green-500');
-                toast.classList.add('bg-red-500');
-                toastIcon.className = 'fas fa-exclamation-circle mr-3 text-xl';
-            }
-            
-            toast.classList.remove('hidden');
-            setTimeout(() => toast.classList.remove('opacity-0'), 10);
-
-            const duration = type === 'success' ? 3000 : 5000;
-            
-            toastTimer = setTimeout(() => {
-                toast.classList.add('opacity-0');
-                setTimeout(() => toast.classList.add('hidden'), 300);
-            }, duration);
-        }
-
-
-        // Default template questions
-        const defaultTemplate = [
+        const defaultTemplate = [ // Default template questions
             {
                 id: 1,
                 type: 'likert',
@@ -137,43 +96,35 @@
         ];
 
 
-        // DOM Elements (defined once globally)
-        const questionsList = document.getElementById('questionsList');
-        //Live Preview
-        const questionModal = document.getElementById('questionModal');
+        const questionsList = document.getElementById('questionsList'); // DOM Elements (defined once globally)
+        const questionModal = document.getElementById('questionModal'); //Live Preview
         const templateModal = document.getElementById('templateModal');
-
         const confirmationModal = document.getElementById('confirmationModal');
         const confirmTitle = document.getElementById('confirmationTitle');
         const confirmMessage = document.getElementById('confirmationMessage');
         const confirmActionBtn = document.getElementById('confirmActionBtn');
         const confirmCancelBtn = document.getElementById('confirmCancelBtn');
+        const confirmationIcon = document.getElementById('confirmationIcon'); 
         
-        // Initialize the application
-        document.addEventListener('DOMContentLoaded', initializeSurveyBuilder);
+        document.addEventListener('DOMContentLoaded', initializeSurveyBuilder); // Initialize the application
         
         async function initializeSurveyBuilder() {
             console.log("Initializing Survey Builder...");
 
-            // Set up all static event listeners first
-            setupEventListeners();
+            setupEventListeners(); // Set up all static event listeners first
 
-            // Load the data needed for the dropdowns
-            await loadBuilderDropdowns();
+            await loadBuilderDropdowns(); // Load the data needed for the dropdowns
             
             const urlParams = new URLSearchParams(window.location.search);
             const surveyIdFromUrl = urlParams.get('survey_id');
 
             if (surveyIdFromUrl) {
-                // --- EDIT MODE ---
-                console.log("Mode: Editing Survey");
+                console.log("Mode: Editing Survey");  // --- EDIT MODE ---
                 currentSurveyId = surveyIdFromUrl;
                 await loadSurveyForEditing(currentSurveyId);
             } else {
-                // --- CREATE MODE ---
-                console.log("Mode: Creating New Survey");
-                // Handle parameters passed from the management page
-                const title = urlParams.get('title');
+                console.log("Mode: Creating New Survey"); // --- CREATE MODE ---
+                const title = urlParams.get('title'); // Handle parameters passed from the management page
                 const officeId = urlParams.get('office_id');
                 const serviceId = urlParams.get('service_id');
                 
@@ -182,8 +133,7 @@
                     document.getElementById('surveyOffice').value = officeId;
                     handleBuilderOfficeChange(); // Load the services for this office
                 }
-                // This will now work because the services are loaded by the line above
-                if (serviceId) {
+                if (serviceId) {  // This will now work because the services are loaded by the line above
                     document.getElementById('surveyService').value = serviceId;
                 }
                 
@@ -191,10 +141,31 @@
                 renderQuestions();
                 //renderPreview();
             }
-            
-            // Activate drag-and-drop last
-            setupSortable();
+            setupSortable(); // Activate drag-and-drop last
         }
+
+        function setupEventListeners() { // Setup event listeners
+            document.getElementById('addQuestion').addEventListener('click', () => openQuestionModal()); // Add question buttons
+            document.getElementById('addQuestionBottom').addEventListener('click', () => openQuestionModal());
+            document.getElementById('closeQuestionModal').addEventListener('click', () => closeQuestionModal()); // Modal close buttons
+            document.getElementById('cancelQuestion').addEventListener('click', () => closeQuestionModal());
+            document.getElementById('loadTemplate').addEventListener('click', loadTemplate); // Template actions
+            document.getElementById('saveAsTemplate').addEventListener('click', () => openTemplateModal());
+            document.getElementById('closeTemplateModal').addEventListener('click', () => closeTemplateModal());
+            document.getElementById('cancelTemplate').addEventListener('click', () => closeTemplateModal());
+            document.getElementById('questionForm').addEventListener('submit', saveQuestion); // Question form
+            document.getElementById('templateForm').addEventListener('submit', saveTemplate);
+            document.getElementById('surveyOffice').addEventListener('change', handleBuilderOfficeChange); // Question type change
+            
+            ['surveyTitle', 'surveyOffice', 'surveyService'].forEach(id => { // Survey info changes
+                document.getElementById(id).addEventListener('input', renderPreview);
+                document.getElementById(id).addEventListener('change', renderPreview);
+            });
+            document.getElementById('previewSurvey').addEventListener('click', previewSurvey);  // Preview and save buttons
+            document.getElementById('saveDraft').addEventListener('click', saveDraft);
+            document.getElementById('publishSurvey').addEventListener('click', publishSurvey);
+        }
+
 
         async function loadBuilderDropdowns() {
                 console.log("Loading office and service dropdowns...");
@@ -223,9 +194,9 @@
                     console.error("Failed to load dropdown data:", error);
                     showToastNotification("Could not load office/service data.", "error");
                 }
-         }
+        }
 
-         function handleBuilderOfficeChange() {
+        function handleBuilderOfficeChange() {
             const officeId = document.getElementById('surveyOffice').value;
             const serviceSelect = document.getElementById('surveyService');
             
@@ -235,8 +206,7 @@
                 return;
             }
 
-            // Filter the services we already loaded
-            const relevantServices = window.services.filter(s => s.office_id == officeId);
+            const relevantServices = window.services.filter(s => s.office_id == officeId); // Filter the services we already loaded
 
             serviceSelect.innerHTML = '<option value="">Select Service</option>';
             relevantServices.forEach(service => {
@@ -251,43 +221,27 @@
 
 
         async function loadSurveyForEditing(surveyId) {
-            console.log(`Fetching data for survey ID: ${surveyId} to edit.`);
+            console.log(`Fetching data for survey ID: ${surveyId}`);
             try {
                 const response = await fetch(`api/surveys.php?id=${surveyId}`);
                 const result = await response.json();
 
                 if (result.success) {
-                    // The API sends back a single object, so we use it directly.
-                    const survey = result.data; 
-                    
-                    // Populate the form fields
+                    const survey = result.data;
                     document.getElementById('surveyTitle').value = survey.title;
                     document.getElementById('surveyOffice').value = survey.office_id;
+                    
                     handleBuilderOfficeChange();
+                    document.getElementById('surveyService').value = survey.service_id;
                     
-                    // Wait a moment for the services to populate before setting the value, common and simple way to handle async
-                    setTimeout(() => {
-                        document.getElementById('surveyService').value = survey.service_id;
-                    }, 100);
-
-                    let loadedQuestions = [];
-                    // No longer need JSON.parse. The data is already an object. / Check if the object and its nested 'questions' array exist.
                     if (survey.questions_json && Array.isArray(survey.questions_json.questions)) {
-                        loadedQuestions = survey.questions_json.questions;
-                        console.log("Successfully loaded questions from API object:", loadedQuestions);
-                    }
-
-                    surveyQuestions = loadedQuestions;
-                    
-                    if (surveyQuestions.length === 0) {
-                        console.log("No valid questions found in survey data.");
+                        surveyQuestions = survey.questions_json.questions;
+                    } else {
+                        surveyQuestions = [];
                     }
                     
-                    // Re-render the UI
                     renderQuestions();
-                   // renderPreview();
-
-                    showToastNotification("Survey loaded for editing.", "success");
+                    updateButtonStates(survey.status); // NEW: Update buttons based on status
                 } else {
                     showToastNotification(result.message, 'error');
                 }
@@ -296,42 +250,37 @@
             }
         }
 
-        // Setup event listeners
-        function setupEventListeners() {
-            // Add question buttons
-            document.getElementById('addQuestion').addEventListener('click', () => openQuestionModal());
-            document.getElementById('addQuestionBottom').addEventListener('click', () => openQuestionModal());
-            // Modal close buttons
-            document.getElementById('closeQuestionModal').addEventListener('click', () => closeQuestionModal());
-            document.getElementById('cancelQuestion').addEventListener('click', () => closeQuestionModal());
-            // Template actions
-            document.getElementById('loadTemplate').addEventListener('click', loadTemplate);
-            document.getElementById('saveAsTemplate').addEventListener('click', () => openTemplateModal());
-            document.getElementById('closeTemplateModal').addEventListener('click', () => closeTemplateModal());
-            document.getElementById('cancelTemplate').addEventListener('click', () => closeTemplateModal());
-            // Question form
-            document.getElementById('questionForm').addEventListener('submit', saveQuestion);
-            document.getElementById('templateForm').addEventListener('submit', saveTemplate);
-            // Question type change
-            document.getElementById('questionType').addEventListener('change', handleQuestionTypeChange);
-            document.getElementById('surveyOffice').addEventListener('change', handleBuilderOfficeChange);
-            
-            // Survey info changes
-            ['surveyTitle', 'surveyOffice', 'surveyService'].forEach(id => {
-                document.getElementById(id).addEventListener('input', renderPreview);
-                document.getElementById(id).addEventListener('change', renderPreview);
-            });
-            
-            // Preview and save buttons
-            document.getElementById('previewSurvey').addEventListener('click', previewSurvey);
-            document.getElementById('saveDraft').addEventListener('click', saveDraft);
-            document.getElementById('publishSurvey').addEventListener('click', publishSurvey);
+        function updateButtonStates(status) {
+            const saveBtn = document.getElementById('saveDraft');
+            const publishBtn = document.getElementById('publishSurvey');
+            const addQuestionBtn = document.getElementById('addQuestion');
+            const addQuestionBottomBtn = document.getElementById('addQuestionBottom');
+
+            if (status === 'active') {
+                saveBtn.disabled = true; // --- UI State for an ACTIVE survey ---
+                addQuestionBtn.disabled = true;
+                addQuestionBottomBtn.disabled = true;
+                
+                publishBtn.innerHTML = '<i class="fas fa-eye-slash mr-2"></i> Unpublish';  // Make the button an "Unpublish" button
+                publishBtn.className = 'bg-jru-orange text-white px-4 py-2 rounded-lg hover:bg-orange-600 flex items-center';
+                publishBtn.onclick = () => updateSurveyStatus('draft'); // Its action is to set status to 'draft'
+                publishBtn.disabled = false;
+
+            } else { // Assumes 'draft' status
+                saveBtn.disabled = false; // --- UI State for a DRAFT survey ---
+                addQuestionBtn.disabled = false;
+                addQuestionBottomBtn.disabled = false;
+
+                publishBtn.innerHTML = '<i class="fas fa-rocket mr-2"></i> Publish Survey'; // Make the button a "Publish" button
+                publishBtn.className = 'bg-jru-blue text-white px-4 py-2 rounded-lg hover:bg-blue-800 flex items-center';
+                publishBtn.onclick = () => updateSurveyStatus('active'); // Its action is to set status to 'active'
+                publishBtn.disabled = false;
+            }
         }
 
 
         async function saveDraft() {
             console.log("Attempting to save survey...");
-
             const surveyData = {
                 title: document.getElementById('surveyTitle').value,
                 office_id: document.getElementById('surveyOffice').value,
@@ -351,13 +300,11 @@
                 let method;
 
                 if (currentSurveyId) {
-                    // UPDATING an existing survey.
-                    console.log("This is an UPDATE for survey ID:", currentSurveyId);
+                    console.log("This is an UPDATE for survey ID:", currentSurveyId); // UPDATING an existing survey.
                     url = `api/surveys.php?id=${currentSurveyId}`; // Add the ID to the URL
                     method = 'PUT'; // Set the method to PUT
                 } else {
-                    // This is the CREATE logic, which is already working.
-                    console.log("This is a new survey CREATE.");
+                    console.log("This is a new survey CREATE.");  // This is the CREATE logic, which is already working.
                     url = 'api/surveys.php';
                     method = 'POST';
                 }
@@ -371,8 +318,7 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    showToastNotification('Survey saved successfully!', 'success');
-                    // If we just created a new survey, store its ID.
+                    showToastNotification('Survey saved successfully!', 'success');// If we just created a new survey, store its ID.
                     if (result.data && result.data.id) {
                         currentSurveyId = result.data.id;
                     }
@@ -387,45 +333,43 @@
 
         
         async function publishSurvey() {
-            // 1. Check if the survey has been saved at least once to get an ID.
             if (!currentSurveyId) {
                 showToastNotification("Please save the survey as a draft before publishing.", "error");
-                return; // Stop if there's no ID.
+                return;
             }
-
             console.log(`Preparing to publish survey with ID: ${currentSurveyId}`);
 
-            // 2. Confirm the action with the user using our custom modal.
             try {
                 await showConfirmationModal({
                     title: 'Publish Survey',
-                    message: 'Are you sure you want to publish this survey? Once published, the questions and structure cannot be edited. It will be ready to accept responses.',
+                    message: 'Are you sure? Once published, the survey structure will be locked.',
                     actionText: 'Yes, Publish',
-                    destructive: false // Use the blue button style
+                    destructive: false
                 });
 
-                // 3. If the user confirmed, send the request to the API.
                 const response = await fetch(`api/surveys.php?id=${currentSurveyId}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    // Send a specific 'action' in the body to tell the API what to do.
                     body: JSON.stringify({ action: 'publish' })
                 });
 
                 const result = await response.json();
 
-                if (result.success) {
-                    showToastNotification('Survey published successfully! It is now live.', 'success');
-                    // Optionally, you could disable the save/publish buttons now
+                if (result.success) { // --- THIS IS THE NEW, SMARTER LOGIC ---
+                    showToastNotification('Survey published successfully! It is now live.', 'success'); // This handles a successful first-time publish.
+                    document.getElementById('publishSurvey').disabled = true; // Optionally disable the buttons after a successful publish.
                     document.getElementById('saveDraft').disabled = true;
-                    document.getElementById('publishSurvey').disabled = true;
                 } else {
-                    showToastNotification(result.message || "Failed to publish survey.", 'error');
+                    if (result.message && result.message.includes("already active")) { // This 'else' block runs if the API returns success: false.
+                        showToastNotification("This survey is already published and live.", 'info'); // If it's the "already published" error, show a friendly info message.
+                        document.getElementById('publishSurvey').disabled = true; // Also, disable the buttons to prevent further confusion.
+                        document.getElementById('saveDraft').disabled = true;
+                    } else {
+                        showToastNotification(result.message || "Failed to publish survey.", 'error'); // For any other unexpected error, show the red error toast.
+                    }
                 }
-
             } catch (error) {
-                // This 'catch' block runs if the user clicks "Cancel" on the confirmation modal.
-                if (error) { // Only log real errors
+                if (error) {
                     console.error("Error during publish process:", error);
                 } else {
                     console.log("Publish was cancelled by user.");
@@ -433,8 +377,54 @@
             }
         }
 
-        // Render questions in the builder
-        function renderQuestions() {
+
+       async function updateSurveyStatus(newStatus) {
+            if (!currentSurveyId) { // Safety check: We can't publish/unpublish a survey that hasn't been saved at least once.
+                showToastNotification("Please save the survey as a draft first.", "error");
+                return;
+            }
+            const isPublishing = newStatus === 'active'; // Determine the text for the confirmation modal based on the action.
+            const modalTitle = isPublishing ? 'Publish Survey' : 'Unpublish Survey';
+            const modalMessage = isPublishing 
+                ? 'The survey will become live and can accept responses. The question structure will be locked.'
+                : 'The survey will be taken offline and reverted to a draft. You will be able to edit its questions again.';
+            const modalActionText = isPublishing ? 'Yes, Publish' : 'Yes, Unpublish';
+
+            try {
+                await showConfirmationModal({  // Show the confirmation modal and wait for the user's choice.
+                    title: modalTitle,
+                    message: modalMessage,
+                    actionText: modalActionText,
+                    style: 'info' // Use the safe, blue style
+                });
+
+                const response = await fetch(`api/surveys.php?id=${currentSurveyId}`, {  // User clicked "Yes". Proceed to call the API.
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({   // Send the correct body that the PHP API expects.
+                        action: 'change_status', 
+                        status: newStatus 
+                    })
+                });
+
+                const result = await response.json(); // Handle the API's response.
+                if (result.success) {
+                    showToastNotification(`Survey status successfully updated to '${newStatus}'.`, 'success');
+                    loadSurveyForEditing(currentSurveyId); // Reload the survey's data to refresh the UI and button states.
+                } else {
+                    showToastNotification(result.message, 'error');
+                }
+
+            } catch (error) {
+                if (error) {
+                    console.error("Error in updateSurveyStatus:", error); // This block runs if the user clicks "Cancel" or if a network error occurs.
+                } else {
+                    console.log("Status change was cancelled by the user.");
+                }
+            }
+        }
+
+        function renderQuestions() { // Render questions in the builder
             questionsList.innerHTML = '';
             
             surveyQuestions.forEach((question, index) => {
@@ -443,8 +433,7 @@
             });
         }
 
-        // Create question element
-        function createQuestionElement(question, index) {
+        function createQuestionElement(question, index) {  // Create question element
             const div = document.createElement('div');
             div.className = 'question-item bg-gray-50 border border-gray-200 rounded-lg p-4';
             div.dataset.questionId = question.id;
@@ -489,34 +478,25 @@
             return div;
         }
 
-        // Get type icon
-        function getTypeIcon(type) {
+       function getTypeIcon(type) {
             const icons = {
-                'likert': 'fas fa-star',
-                'text': 'fas fa-font',
-                'textarea': 'fas fa-align-left',
-                'multiple': 'fas fa-list',
-                'checkbox': 'fas fa-check-square',
-                'rating': 'fas fa-star-half-alt'
+                'likert': 'fas fa-smile',      // Icon for Emoji Scale
+                'rating': 'fas fa-star',      // Icon for Star Rating
+                'textarea': 'fas fa-align-left' // Icon for Text Response
             };
-            return icons[type] || 'fas fa-question';
+            return icons[type] || 'fas fa-question-circle';
         }
 
-        // Get type label
         function getTypeLabel(type) {
             const labels = {
-                'likert': 'Likert Scale',
-                'text': 'Text Input',
-                'textarea': 'Long Text',
-                'multiple': 'Multiple Choice',
-                'checkbox': 'Checkbox',
-                'rating': 'Star Rating'
+                'likert': 'Emoji Scale',
+                'rating': 'Star Rating',
+                'textarea': 'Text Response'
             };
             return labels[type] || 'Unknown';
         }
 
-        // Render preview
-        function renderPreview() {
+        function renderPreview() {  // Render preview
             const surveyTitle = document.getElementById('surveyTitle').value;
             const surveyOffice = document.getElementById('surveyOffice').selectedOptions[0].text;
             const surveyService = document.getElementById('surveyService').selectedOptions[0].text;
@@ -546,8 +526,7 @@
         }
 
 
-        // Render preview input based on question type
-        function renderPreviewInput(question) {
+        function renderPreviewInput(question) { // Render preview input based on question type
             switch (question.type) {
                 case 'likert':
                     return `
@@ -557,33 +536,7 @@
                             `).join('')}
                         </div>
                     `;
-                case 'text':
-                    return '<div class="w-full h-6 border border-gray-300 rounded bg-gray-50"></div>';
-                case 'textarea':
-                    return '<div class="w-full h-12 border border-gray-300 rounded bg-gray-50"></div>';
-                case 'multiple':
-                    return `
-                        <div class="space-y-1">
-                            ${['Option 1', 'Option 2', 'Option 3'].map(opt => `
-                                <div class="flex items-center">
-                                    <div class="w-3 h-3 border border-gray-300 rounded-full mr-2"></div>
-                                    <span class="text-xs text-gray-600">${opt}</span>
-                                </div>
-                            `).join('')}
-                        </div>
-                    `;
-                case 'checkbox':
-                    return `
-                        <div class="space-y-1">
-                            ${['Option 1', 'Option 2', 'Option 3'].map(opt => `
-                                <div class="flex items-center">
-                                    <div class="w-3 h-3 border border-gray-300 rounded mr-2"></div>
-                                    <span class="text-xs text-gray-600">${opt}</span>
-                                </div>
-                            `).join('')}
-                        </div>
-                    `;
-                case 'rating':
+                 case 'rating':
                     return `
                         <div class="flex space-x-1">
                             ${[1,2,3,4,5].map(i => `
@@ -591,13 +544,15 @@
                             `).join('')}
                         </div>
                     `;
+                case 'text':
+                    return '<div class="w-full h-6 border border-gray-300 rounded bg-gray-50"></div>';
+               
                 default:
                     return '<div class="w-full h-6 border border-gray-300 rounded bg-gray-50"></div>';
             }
         }
         
-        // Setup sortable functionality
-        function setupSortable() {
+        function setupSortable() { // Setup sortable functionality
             new Sortable(questionsList, {
                 handle: '.drag-handle',
                 animation: 150,
@@ -606,35 +561,31 @@
                 onEnd: function(evt) {
                     const oldIndex = evt.oldIndex;
                     const newIndex = evt.newIndex;
-                    
-                    // Reorder questions array
-                    const movedQuestion = surveyQuestions.splice(oldIndex, 1)[0];
+                    const movedQuestion = surveyQuestions.splice(oldIndex, 1)[0]; // Reorder questions array
                     surveyQuestions.splice(newIndex, 0, movedQuestion);
                     
-                    // Re-render
                     renderQuestions();
-                   renderPreview();
+                  // renderPreview();
                 }
             });
         }
 
-        // Question management functions
-        function openQuestionModal(questionId = null) {
+       function openQuestionModal(questionId = null) {  // Question management functions
             currentEditingQuestion = questionId;
             
             if (questionId) {
-                const question = surveyQuestions.find(q => q.id === questionId);
+                const question = surveyQuestions.find(q => q.id === questionId);  // Logic to load existing question data into the modal...
                 if (question) {
+                    document.getElementById('questionTitle').value = question.title || '';
                     document.getElementById('questionType').value = question.type;
                     document.getElementById('questionText').value = question.text;
                     document.getElementById('questionHelp').value = question.help || '';
                     document.querySelector(`input[name="required"][value="${question.required}"]`).checked = true;
                 }
             } else {
-                document.getElementById('questionForm').reset();
+                document.getElementById('questionForm').reset(); // Logic for a new question: just reset the form.
             }
             
-            handleQuestionTypeChange();
             questionModal.classList.remove('hidden');
         }
 
@@ -643,24 +594,7 @@
             currentEditingQuestion = null;
         }
 
-        function handleQuestionTypeChange() {
-            const type = document.getElementById('questionType').value;
-            const optionsSection = document.getElementById('optionsSection');
-            const likertSection = document.getElementById('likertSection');
-            
-            // Show/hide sections based on question type
-            if (type === 'multiple' || type === 'checkbox') {
-                optionsSection.classList.remove('hidden');
-            } else {
-                optionsSection.classList.add('hidden');
-            }
-            
-            if (type === 'likert') {
-                likertSection.classList.remove('hidden');
-            } else {
-                likertSection.classList.add('hidden');
-            }
-        }
+  
 
         function saveQuestion(e) {
             e.preventDefault();
@@ -668,6 +602,7 @@
             const questionData = {
                 id: currentEditingQuestion || Date.now(),
                 type: document.getElementById('questionType').value,
+                 title: document.getElementById('questionTitle').value,
                 text: document.getElementById('questionText').value,
                 help: document.getElementById('questionHelp').value,
                 required: document.querySelector('input[name="required"]:checked').value === 'true',
@@ -701,16 +636,26 @@
             }
         }
 
-        function deleteQuestion(questionId) {
-            if (confirm('Are you sure you want to delete this question?')) {
+        async function deleteQuestion(questionId) {
+            try {
+                await showConfirmationModal({ // We 'await' the result of our modal function. The code will PAUSE here until the user clicks one of the buttons.
+                    title: 'Delete Question',
+                    message: 'Are you sure you want to remove this question from the survey?',
+                    actionText: 'Delete' // This will be the text on the red button
+                });
+
+                console.log("User confirmed deletion. Deleting question:", questionId); // If the user clicks "Delete", the promise resolves, and the code continues here.
                 surveyQuestions = surveyQuestions.filter(q => q.id !== questionId);
                 renderQuestions();
-              //  renderPreview();
+                renderPreview(); // Also update the preview
+                showToastNotification("Question deleted.", "success");
+
+            } catch (error) {
+                console.log("User cancelled question deletion."); // If the user clicks "Cancel", the promise rejects, and the code jumps directly to this catch block, skipping the deletion logic.
             }
         }
 
-        // Template functions
-        function loadTemplate() {
+        function loadTemplate() {  // Template functions
             const template = document.getElementById('surveyTemplate').value;
             
             if (template === 'standard') {
@@ -718,8 +663,6 @@
             } else if (template === 'blank') {
                 surveyQuestions = [];
             }
-            // Add more template options here
-            
             renderQuestions();
            // renderPreview();
         }
@@ -741,46 +684,82 @@
                 category: document.getElementById('templateCategory').value,
                 questions: surveyQuestions
             };
-            
-            // Here you would save to your backend
-            console.log('Saving template:', templateData);
+            console.log('Saving template:', templateData); // Save to the bakcend
             alert('Template saved successfully!');
             closeTemplateModal();
         }
 
-        // Survey actions
-        function previewSurvey() {
-            // Open survey in new window/tab for full preview
+        function previewSurvey() {  // Survey actions
             window.open('survey-sample.php', '_blank');
         }
 
-       // Returns a Promise that resolves or rejects based on user action
-        function showConfirmationModal({ title, message, actionText = 'Confirm', destructive = true }) {
-            return new Promise((resolve, reject) => {
-                confirmTitle.textContent = title;
+
+         function showToastNotification(message, type = 'success') {
+            const toast = document.getElementById('toastNotification');
+            if (!toast) {
+                alert(`${type.toUpperCase()}: ${message}`);
+                return;
+            }
+            const toastIcon = document.getElementById('toastIcon');
+            const toastMessage = document.getElementById('toastMessage');
+
+            clearTimeout(toastTimer);
+            toastMessage.textContent = message;
+
+            toast.classList.remove('bg-green-500', 'bg-red-500', 'bg-blue-500');
+
+            if (type === 'success') {
+                toast.classList.add('bg-green-500');
+                toastIcon.className = 'fas fa-check-circle mr-3 text-xl';
+            } else if (type === 'info') { 
+                toast.classList.add('bg-blue-500');
+                toastIcon.className = 'fas fa-info-circle mr-3 text-xl';
+            } else { // 'error'
+                toast.classList.add('bg-red-500');
+                toastIcon.className = 'fas fa-exclamation-circle mr-3 text-xl';
+            }
+            
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.remove('opacity-0'), 10);
+
+            const duration = type === 'success' ? 3000 : 5000;
+            
+            toastTimer = setTimeout(() => {
+                toast.classList.add('opacity-0');
+                setTimeout(() => toast.classList.add('hidden'), 300);
+            }, duration);
+        }
+
+
+       
+      function showConfirmationModal({ title, message, actionText = 'Confirm' }) { // Returns a Promise that resolves or rejects based on user action
+            const confirmationModal = document.getElementById('confirmationModal');
+            const confirmTitle = document.getElementById('confirmationTitle');
+            const confirmMessage = document.getElementById('confirmationMessage');
+            const confirmActionBtn = document.getElementById('confirmActionBtn');
+            const confirmCancelBtn = document.getElementById('confirmCancelBtn');
+
+            if (!confirmationModal) {
+                if (window.confirm(`${title}\n\n${message}`)) { // If the modal HTML isn't on the page, fall back to the basic browser confirm
+                    return Promise.resolve(); // User clicked "OK"
+                } else {
+                    return Promise.reject();  // User clicked "Cancel"
+                }
+            }
+            return new Promise((resolve, reject) => { // This returns a Promise, which lets us use 'await'
+                confirmTitle.textContent = title; // Set the text for this specific confirmation
                 confirmMessage.textContent = message;
                 confirmActionBtn.textContent = actionText;
-
-                // Style the action button (red for destructive, blue for normal)
-                if (destructive) {
-                    confirmActionBtn.classList.remove('bg-jru-blue', 'hover:bg-blue-800');
-                    confirmActionBtn.classList.add('bg-red-600', 'hover:bg-red-700');
-                } else {
-                    confirmActionBtn.classList.remove('bg-red-600', 'hover:bg-red-700');
-                    confirmActionBtn.classList.add('bg-jru-blue', 'hover:bg-blue-800');
-                }
-
                 confirmationModal.classList.remove('hidden');
 
-                // Use .onclick here and set it to null later to ensure we don't have multiple listeners stacking up on the buttons.
-                confirmActionBtn.onclick = () => {
+                confirmActionBtn.onclick = () => {  // When the main action button is clicked, close the modal and resolve the promise (succeed)
                     confirmationModal.classList.add('hidden');
-                    resolve(); // User confirmed
+                    resolve();
                 };
 
                 confirmCancelBtn.onclick = () => {
-                    confirmationModal.classList.add('hidden');
-                    reject(); // User canceled
+                    confirmationModal.classList.add('hidden'); // When the cancel button is clicked, close the modal and reject the promise (fail/cancel)
+                    reject(); 
                 };
             });
         }
