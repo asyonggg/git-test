@@ -111,7 +111,7 @@ CREATE TABLE surveys (
   description TEXT NULL DEFAULT NULL,
   office_id INT(11) NOT NULL,
   service_id INT(11) NOT NULL,
-  status ENUM('draft', 'active', 'archived') NOT NULL DEFAULT 'draft',
+  status ENUM('draft', 'active', 'inactive', 'archived') NOT NULL DEFAULT 'draft';
   questions_json JSON NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -120,25 +120,45 @@ CREATE TABLE surveys (
   INDEX fk_surveys_service_id (service_id)
 ) ENGINE=InnoDB;
 
+ALTER TABLE surveys
+ADD COLUMN is_locked TINYINT(1) NOT NULL DEFAULT 0 AFTER questions_json;
+
+ALTER TABLE surveys
+MODIFY COLUMN status ENUM('draft', 'active', 'inactive', 'archived') NOT NULL DEFAULT 'draft';
+
+ALTER TABLE surveys
+ADD COLUMN status_before_archived ENUM('draft', 'active', 'inactive') NULL DEFAULT NULL AFTER status;
 
 CREATE TABLE `respondents` (
   `id` INT(11) NOT NULL AUTO_INCREMENT,
-  `respondent_type` ENUM('student','parent','alumni','visitor','other') NOT NULL,
-  `identifier` VARCHAR(255) NOT NULL,
-  `division` VARCHAR(100) NULL DEFAULT NULL,
-  `course` VARCHAR(100) NULL DEFAULT NULL,
+  `respondent_type` ENUM('student', 'non-student') NOT NULL,.
+  `student_id` INT(11) NULL DEFAULT NULL,
+  `identifier_email` VARCHAR(255) NULL DEFAULT NULL,
   `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  UNIQUE INDEX `identifier_unique` (`identifier`)
-) ENGINE=InnoDB;
+  FOREIGN KEY (`student_id`) REFERENCES `students`(`id`) ON DELETE SET NULL
+) ENGINE=InnoDB;NGINE=InnoDB;
+
 
 CREATE TABLE `survey_responses` (
   `id` INT(11) NOT NULL AUTO_INCREMENT,
   `survey_id` INT(11) NOT NULL,
-  `respondent_id` INT(11) NOT NULL,
+  `respondent_id` INT(11) NOT NULL, -- This links to our NEW respondents table
   `answers_json` JSON NOT NULL,
   `submitted_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  INDEX `fk_responses_survey_id` (`survey_id`),
-  INDEX `fk_responses_respondent_id` (`respondent_id`)
+  FOREIGN KEY (`survey_id`) REFERENCES `surveys`(`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`respondent_id`) REFERENCES `respondents`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+
+CREATE TABLE `students` (
+  `id` INT(11) NOT NULL AUTO_INCREMENT,
+  `student_number` VARCHAR(50) NOT NULL UNIQUE, -- The official student ID
+  `full_name` VARCHAR(255) NOT NULL,
+  `email` VARCHAR(255) NOT NULL UNIQUE,      -- The official @my.jru.edu or @jru.edu email
+  `division` VARCHAR(100) NULL,              -- e.g., 'College', 'SHS'
+  `course_or_strand` VARCHAR(100) NULL,      -- e.g., 'BSIT', 'ABM'
+  PRIMARY KEY (`id`),
+  INDEX `idx_email` (`email`) -- We add an index to the email column for very fast lookups
 ) ENGINE=InnoDB;

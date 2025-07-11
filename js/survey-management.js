@@ -63,6 +63,7 @@
         });
 
     async function initializeApp() {
+        setupEventListeners();
         await loadOffices();
         await loadServices();
         await loadSurveys();
@@ -70,138 +71,52 @@
         populateOfficeSelects();
     }
 
+    
     function setupEventListeners() {
-        
-        document.getElementById('surveysTab').addEventListener('click', () => switchTab('surveys')); // Tab switching
+        document.getElementById('surveysTab').addEventListener('click', () => switchTab('surveys'));
         document.getElementById('officesTab').addEventListener('click', () => switchTab('offices'));
 
-        const createSurveyBtn = document.getElementById('createSurveyBtn'); // Survey creation
-        if (createSurveyBtn) {
-            createSurveyBtn.addEventListener('click', function(e) {
-                console.log('Create Survey button clicked');
-                e.preventDefault();
-                openCreateSurveyModal();
-            });
-        }
-
-        const quickNewSurvey = document.getElementById('quickNewSurvey');  // Survey creation - Quick action button
-        if (quickNewSurvey) {
-            quickNewSurvey.addEventListener('click', function(e) {
-                console.log('Quick New Survey button clicked');
-                e.preventDefault();
-                openCreateSurveyModal();
-            });
-        }
-        
-        const closeCreateModal = document.getElementById('closeCreateModal');     // Modal close buttons
-        if (closeCreateModal) {
-            closeCreateModal.addEventListener('click', function(e) {
-                console.log('Close modal X button clicked');
-                e.preventDefault();
-                closeCreateSurveyModal();
-            });
-        }
-        
-        const cancelCreate = document.getElementById('cancelCreate');
-        if (cancelCreate) {
-            cancelCreate.addEventListener('click', function(e) {
-                console.log('Cancel button clicked');
-                e.preventDefault();
-                closeCreateSurveyModal();
-            });
-        }
-
-
-        const createSurveyForm = document.getElementById('createSurveyForm');
-        if (createSurveyForm) {
-            createSurveyForm.addEventListener('submit', handleCreateSurvey);
-        }
-
-        // Add Office Modal
-        const addOfficeBtn = document.getElementById('addOfficeBtn');
-        if (addOfficeBtn) {
-            addOfficeBtn.addEventListener('click', openAddOfficeModal);
-        }
-        
-        //Add Service modal
-        const addServiceBtn = document.getElementById('addServiceBtn');
-        if (addServiceBtn) {
-            addServiceBtn.addEventListener('click', openAddServiceModal);
-        }
-        
-        // Modal close buttons
-        const cancelAddOffice = document.getElementById('cancelAddOffice');
-        if (cancelAddOffice) {
-            cancelAddOffice.addEventListener('click', closeAddOfficeModal);
-        }
-
-            const cancelEditOfficeModal = document.getElementById('cancelEditOfficeModal');
-        if (cancelEditOfficeModal) {
-            cancelEditOfficeModal.addEventListener('click', closeEditOfficeModal);
-        }
-
-
-        const editOfficeForm = document.getElementById('editOfficeForm');
-        if (editOfficeForm) {
-            editOfficeForm.addEventListener('submit', handleUpdateOffice);
-        }
-        
-        const cancelAddService = document.getElementById('cancelAddService');
-        if (cancelAddService) {
-            cancelAddService.addEventListener('click', closeAddServiceModal);
-        }
-        
-        const addOfficeForm = document.getElementById('addOfficeForm');
-        if (addOfficeForm) {
-            addOfficeForm.addEventListener('submit', handleAddOffice);
-        }
-        
-        const addServiceForm = document.getElementById('addServiceForm');
-        if (addServiceForm) {
-            addServiceForm.addEventListener('submit', handleAddService);
-        }
-
-        const newSurveyOffice = document.getElementById('newSurveyOffice'); // Office selection for services
+        const newSurveyOffice = document.getElementById('newSurveyOffice');
         if (newSurveyOffice) {
             newSurveyOffice.addEventListener('change', handleOfficeChange);
         }
+
+        document.getElementById('surveysTableBody').addEventListener('click', handleTableActions);
+
+        document.getElementById('createSurveyBtn').addEventListener('click', openCreateSurveyModal);         // Create Survey Modal Listeners
+        document.getElementById('quickNewSurvey').addEventListener('click', openCreateSurveyModal);
+        document.getElementById('closeCreateModal').addEventListener('click', closeCreateSurveyModal);
+        document.getElementById('cancelCreate').addEventListener('click', closeCreateSurveyModal);
+        document.getElementById('createSurveyForm').addEventListener('submit', handleCreateSurvey);
         
-        const officeFilter = document.getElementById('officeFilter');
-        if (officeFilter) {
-            officeFilter.addEventListener('change', filterServices);
+        document.getElementById('addOfficeBtn').addEventListener('click', openAddOfficeModal);  // Event listeners for Office/Service CRUD, toggles, etc., are correct) ...
+        document.getElementById('cancelAddOffice').addEventListener('click', closeAddOfficeModal);
+        document.getElementById('addOfficeForm').addEventListener('submit', handleAddOffice);
+        document.getElementById('editOfficeForm').addEventListener('submit', handleUpdateOffice);
+        document.getElementById('cancelEditOfficeModal').addEventListener('click', closeEditOfficeModal);
+        
+        document.getElementById('addServiceBtn').addEventListener('click', openAddServiceModal);
+        document.getElementById('cancelAddService').addEventListener('click', closeAddServiceModal);
+        document.getElementById('addServiceForm').addEventListener('submit', handleAddService);
+        document.getElementById('editServiceForm').addEventListener('submit', handleUpdateService);
+        document.getElementById('cancelEditServiceModal').addEventListener('click', closeEditServiceModal);
+
+        document.getElementById('showArchivedToggleOffices').addEventListener('change', handleShowArchivedToggleOffices);
+        document.getElementById('showArchivedToggleServices').addEventListener('change', handleShowArchivedServices);
+        document.getElementById('officeFilter').addEventListener('change', filterServices);
+
+        const showArchivedToggleSurveys = document.getElementById('showArchivedSurveysToggle');
+        if (showArchivedToggleSurveys) {
+            showArchivedToggleSurveys.addEventListener('change', function(event) {
+                isShowingArchivedSurveys = event.target.checked;
+                loadSurveys();
+            });
         }
 
-        const searchInput = document.getElementById('searchInput'); // Search
+        const searchInput = document.getElementById('searchInput');
         if (searchInput) {
-            searchInput.addEventListener('input', handleSearch);
+            searchInput.addEventListener('input', () => renderSurveys());
         }
-
-        const showArchivedToggleOffices = document.getElementById('showArchivedToggleOffices'); //Show archived offices toggle
-        if (showArchivedToggleOffices) {
-            showArchivedToggleOffices.addEventListener('change', handleShowArchivedToggleOffices);
-        }
-
-        const showArchivedToggleServices = document.getElementById('showArchivedToggleServices'); //Show archived services toggle - 1st
-        if (showArchivedToggleServices){
-            showArchivedToggleServices.addEventListener('change', handleShowArchivedServices);
-        }
-
-        const cancelEditServiceModal = document.getElementById('cancelEditServiceModal');
-        if (cancelEditServiceModal) {
-            cancelEditServiceModal.addEventListener('click', closeEditServiceModal);
-        }
-        
-        const editServiceForm = document.getElementById('editServiceForm');
-        if (editServiceForm) {
-            editServiceForm.addEventListener('submit', handleUpdateService);
-        }
-
-        document.getElementById('showArchivedSurveysToggle').addEventListener('change', (event) => {
-            isShowingArchivedSurveys = event.target.checked;
-            loadSurveys(); // Reload the survey list with the new setting
-        });
-
-        
     }
 
     function openCreateSurveyModal() {
@@ -445,120 +360,212 @@
         
         renderSurveys(); // The render call remains at the end, which is perfect.
     }
-        
-        
-    function renderSurveys() {
-        const tbody = document.getElementById('surveysTableBody');
 
-        if (!surveys || surveys.length === 0) {
-            let emptyMessage = isShowingArchivedSurveys 
-                ? 'No archived surveys found.' 
-                : 'No active surveys found.';  // 1. Handle the "empty state" for both active and archived views.
-            
-            let emptyStateButton = !isShowingArchivedSurveys 
-                ? `<button onclick="openCreateSurveyModal()" class="mt-4 bg-jru-blue text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors">
-                    <i class="fas fa-plus mr-2"></i>Create Survey
-                </button>` 
-                : ''; // The "Create Survey" button should only show in the "empty active" state.
-
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="7" class="px-6 py-8 text-center text-gray-500">
-                        <div class="flex flex-col items-center">
-                            <i class="fas fa-poll text-4xl text-gray-300 mb-4"></i>
-                            <p class="text-lg font-medium">${emptyMessage}</p>
-                            ${emptyStateButton}
-                        </div>
-                    </td>
-                </tr>
-            `;
+    async function handleTableActions(event) {
+        const button = event.target.closest('button[data-action]');
+        if (!button) {
             return;
         }
 
-        tbody.innerHTML = surveys.map(survey => { // 2. If there are surveys, build the table rows.
+        const action = button.dataset.action;
+        const id = button.dataset.id;
+        let confirmOptions = {};
+        
+        switch (action) {
+            // --- ADD THIS CASE ---
+            case 'duplicate':
+                duplicateSurvey(id); // Call our new function.
+                return; // Stop here.
             
-            const officeName = survey.office_name || 'Unknown Office';  // Prepare the data for display
-            const serviceName = survey.service_name || 'Unknown Service';
-            // --- DYNAMIC BUTTON LOGIC (This part was correct) ---
-            const actionButtons = isShowingArchivedSurveys
-                ? `<!-- Archived View Buttons -->
-                <button onclick="reactivateSurvey(${survey.id})" class="text-gray-400 hover:text-green-600" title="Reactivate Survey">
-                    <i class="fas fa-undo-alt"></i>
-                </button>
-                <button onclick="permanentlyDeleteSurvey(${survey.id})" class="text-gray-400 hover:text-red-600" title="Permanently Delete">
-                    <i class="fas fa-trash-alt"></i>
-                </button>`
-                : `<!-- Active/Draft View Buttons -->
-                <button onclick="editSurvey(${survey.id})" class="text-gray-400 hover:text-jru-blue" title="Edit Survey">
-                    <i class="fas fa-edit"></i>
-                </button>
-                <!-- View Result 
-                    <button onclick="viewSurvey(${survey.id})" class="text-gray-400 hover:text-green-600" title="View Results">
-                    <i class="fas fa-chart-bar"></i>
-                </button> -->
-                <button onclick="getSurveyLink(${survey.id})" class="text-gray-400 hover:text-blue-600" title="Get Shareable Link">
-                    <i class="fas fa-link"></i>
-                </button>
-                <button onclick="deleteSurvey(${survey.id})" class="text-gray-400 hover:text-red-600" title="Archive Survey">
-                    <i class="fas fa-box-archive"></i>
-                </button>`;
+            case 'archive':
+                confirmOptions = {  title: 'Archive Survey', 
+                                    message: 'This will hide the survey from the main dashboard. You can view it again using the "Show Archived" toggle.', 
+                                    actionText: 'Yes, Archive' };
+                break;
+            case 'unarchive':
+                confirmOptions = {  title: 'Unarchive Survey',
+                                    message: 'This will restore the survey to its previous state (e.g., draft or active).',
+                                    actionText: 'Yes, Restore' };
+                break;
+            case 'deactivate':
+                confirmOptions = {  title: 'Deactivate Survey', 
+                                    message: 'This will pause the survey, stopping it from receiving new responses. You can reactivate it later.',
+                                    actionText: 'Yes, Deactivate' };
+                break;
+            case 'reactivate':
+                confirmOptions = {  title: 'Reactivate Survey', 
+                                    message: 'This will make the survey live again and allow it to accept responses.', 
+                                    actionText: 'Yes, Reactivate' };
+                break;
+            case 'delete-draft':
+                permanentlyDeleteSurvey(id);
+                return;
+            default:
+                console.error(`Unknown action: ${action}`);
+                return;
+        }
+
+        try {
+            await showConfirmationModal(confirmOptions);
+            
+            const response = await fetch(`api/surveys.php?id=${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: action })
+            });
+
+            const result = await response.json();
+            
+            if (!result.success) {
+                throw new Error(result.message);
+            }
+
+            showToastNotification(result.message, 'success');
+            loadSurveys();
+
+        } catch (error) {
+            if (error && error.message) {
+                showToastNotification(error.message, 'error');
+            } else {
+                console.log(`Action '${action}' was cancelled.`);
+            }
+        }
+    }
+
+    function getStatusClass(status) {
+        const classes = {
+            'draft': 'bg-yellow-100 text-yellow-800',
+            'active': 'bg-green-100 text-green-800',
+            'inactive': 'bg-gray-100 text-gray-800', 
+            'archived': 'bg-red-100 text-red-800'
+        };
+        return classes[status] || 'bg-gray-100 text-gray-800';
+    }
+
+
+    function renderSurveys() {
+        const tbody = document.getElementById('surveysTableBody');
+        const searchInput = document.getElementById('searchInput');
+        const query = searchInput ? searchInput.value.toLowerCase() : '';
+
+        if (!Array.isArray(surveys) || surveys.length === 0) {
+            const emptyMessage = isShowingArchivedSurveys ? 'No archived surveys found.' : 'No surveys have been created yet.';
+            tbody.innerHTML = `<tr><td colspan="7" class="px-6 py-12 text-center text-gray-500">${emptyMessage}</td></tr>`;
+            updateStatistics();
+            return;
+        }
+
+        const filteredSurveys = surveys.filter(survey => {
+            const titleMatch = survey.title ? survey.title.toLowerCase().includes(query) : false;
+            const officeMatch = survey.office_name ? survey.office_name.toLowerCase().includes(query) : false;
+            const serviceMatch = survey.service_name ? survey.service_name.toLowerCase().includes(query) : false;
+            return titleMatch || officeMatch || serviceMatch;
+        });
+
+        if (filteredSurveys.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7" class="px-6 py-8 text-center text-gray-500">No surveys found matching your search.</td></tr>`;
+            updateStatistics();
+            return;
+        }
+
+        tbody.innerHTML = filteredSurveys.map(survey => {
+            let actionButtons = '';
+            
+            // This button creates a copy of a survey. It's useful for locked or archived surveys.
+            const duplicateBtn = `<button data-action="duplicate" data-id="${survey.id}" class="text-gray-500 hover:text-green-600" title="Duplicate Survey"><i class="fas fa-copy"></i></button>`;
+
+            const viewBtn = `<a href="survey-details.php?id=${survey.id}" class="text-gray-500 hover:text-jru-blue" title="View Details & Results"><i class="fas fa-chart-bar"></i></a>`;
+            const editBtn = `<a href="survey-builder.php?survey_id=${survey.id}" class="text-gray-500 hover:text-jru-blue" title="Edit & Build Survey"><i class="fas fa-edit"></i></a>`;
+            const archiveBtn = `<button data-action="archive" data-id="${survey.id}" class="text-gray-500 hover:text-orange-600" title="Archive Survey"><i class="fas fa-archive"></i></button>`;
+
+            switch(survey.status) {
+                case 'draft':
+                    actionButtons = `
+                        ${editBtn}
+                        ${archiveBtn}
+                        <button data-action="delete-draft" data-id="${survey.id}" class="text-gray-500 hover:text-red-600" title="Delete Draft"><i class="fas fa-trash-alt"></i></button>`;
+                    break;
+                case 'active':
+                case 'inactive':
+                    const toggleAction = survey.status === 'active' ? 'deactivate' : 'reactivate';
+                    const toggleIcon = survey.status === 'active' ? 'fa-toggle-off' : 'fa-toggle-on';
+                    const toggleTitle = survey.status === 'active' ? 'Deactivate' : 'Reactivate';
+                    const linkBtn = survey.status === 'active' ? `<button onclick="getSurveyLink(${survey.id})" class="text-gray-500 hover:text-blue-600" title="Get Shareable Link"><i class="fas fa-link"></i></button>` : '';
+
+                    actionButtons = `
+                        ${viewBtn}
+                        ${linkBtn}
+                        ${duplicateBtn} 
+                        <button data-action="${toggleAction}" data-id="${survey.id}" class="text-gray-500 hover:text-orange-600" title="${toggleTitle}"><i class="fas ${toggleIcon}"></i></button>
+                        ${archiveBtn}`;
+                    break;
+                case 'archived':
+                    actionButtons = `
+                        ${viewBtn}
+                        ${duplicateBtn} 
+                        <button data-action="unarchive" data-id="${survey.id}" class="text-gray-500 hover:text-green-600" title="Unarchive Survey"><i class="fas fa-box-open"></i></button>
+                        <button onclick="permanentlyDeleteSurvey(${survey.id})" class="text-gray-500 hover:text-red-600" title="Permanently Delete"><i class="fas fa-trash-alt"></i></button>`;
+                    break;
+            }
+            
+            const titleText = `<div class="font-medium text-gray-900">${survey.title}</div>`;
 
             return `
                 <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">${titleText}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${survey.office_name || 'N/A'}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${survey.service_name || 'N/A'}</td>
                     <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="text-sm font-medium text-gray-900">${survey.title}</div>
-                        <div class="text-sm text-gray-500">${survey.description || 'No description'}</div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${officeName}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${serviceName}</td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusClass(survey.status)}">
-                            ${survey.status}
+                        <span class="inline-flex px-2 py-1 text-xs font-semibold leading-5 rounded-full ${getStatusClass(survey.status)}">
+                            ${survey.status.charAt(0).toUpperCase() + survey.status.slice(1)}
                         </span>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">${survey.response_count || 0}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">${survey.response_count || 0}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${formatDate(survey.created_at)}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <div class="flex items-center justify-end space-x-3">${actionButtons}</div>
+                        <div class="flex items-center justify-end space-x-4">${actionButtons}</div>
                     </td>
                 </tr>
             `;
         }).join('');
+
+        updateStatistics();
     }
 
-    async function reactivateSurvey(surveyId) {
+    async function duplicateSurvey(surveyId) {
         try {
-            await showConfirmationModal({
-                title: 'Reactivate Survey',
-                message: 'This will move the survey back to your main list as a draft, ready for editing.',
-                actionText: 'Yes, Reactivate',
-                style: 'info' 
+            await showConfirmationModal({ // Confirm the user wants to duplicate.
+                title: 'Duplicate Survey',
+                message: 'This will create a new, editable draft from this survey. Do you want to continue?',
+                actionText: 'Yes, Duplicate'
             });
 
-            const url = `api/surveys.php?id=${surveyId}`; // The URL only contains the ID.
-            
-            const response = await fetch(url, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({     // Send the body that the PHP API expects for this action.
-                    action: 'change_status', 
-                    status: 'draft' // Reactivating always sets the status back to 'draft'.
-                })
+            const response = await fetch(`api/duplicate-survey.php?id=${surveyId}`, {
+                method: 'POST'
             });
-            
+
             const result = await response.json();
 
-            if (result.success) {
-                showToastNotification('Survey reactivated!', 'success');
-                loadSurveys(); // Reload the surveys list. The reactivated item will now be in the main list.
-            } else {
-                showToastNotification(result.message, 'error');
+            if (!result.success) {
+                throw new Error(result.message); // Handle API errors.
             }
+
+            const newSurveyId = result.data.new_survey_id;  // If successful, get the new survey's ID from the response.
+            
+            showToastNotification('Survey duplicated! Taking you to the editor...', 'success');  // Redirect the user to the survey builder for the new copy.
+            setTimeout(() => {
+                window.location.href = `survey-builder.php?survey_id=${newSurveyId}`;
+            }, 1500); // Wait 1.5 seconds for the user to read the toast.
+
         } catch (error) {
-            if (error) console.error("Reactivation Error:", error);
+            if (error && error.message) {
+                showToastNotification(error.message, 'error');
+            } else {
+                console.log('Survey duplication was cancelled by the user.');
+            }
         }
     }
-
+    
     async function permanentlyDeleteSurvey(surveyId) {
         try {
             await showConfirmationModal({   // This confirmation MUST be very clear about the danger
@@ -582,7 +589,7 @@
 
 
     function getSurveyLink(surveyId) {
-        // window.location.origin gives you the base URL,  window.location.pathname.split('/').slice(0, -1).join('/') gets the current directory path
+        // window.location.origin gives the base URL,  window.location.pathname.split('/').slice(0, -1).join('/') gets the current directory path
         const basePath = window.location.origin + window.location.pathname.split('/').slice(0, -1).join('/');
         const surveyUrl = `${basePath}/take-survey.php?id=${surveyId}`;
         window.prompt("Copy this link to share the survey:", surveyUrl); // Use a prompt box to show the link and make it easy to copy
@@ -604,8 +611,8 @@
         }
 
         container.innerHTML = offices.map(office => {
-            // --- DYNAMIC BUTTON LOGIC ---
-            const buttons = isShowingArchivedOffices
+           
+            const buttons = isShowingArchivedOffices  // --- DYNAMIC BUTTON LOGIC ---
                 ? `<!-- Archived View Buttons -->
                 <button onclick="reactivateOffice(${office.id})" class="text-gray-400 hover:text-green-600" title="Reactivate Office">
                     <i class="fas fa-undo-alt"></i>
@@ -636,7 +643,7 @@
     function renderServices() {
         const container = document.getElementById('servicesList');
 
-        if (services.length === 0) { // // The services array is now pre-filtered by the loadServices() API call, A simplified check
+        if (services.length === 0) { // The services array is now pre-filtered by the loadServices() API call, A simplified check
                 container.innerHTML = `<p class="text-gray-500 text-center py-4">${isShowingArchivedServices ? 'No archived services found.' : 'No active services found.'}</p>`;
                 return;
             }
@@ -1090,23 +1097,34 @@
             });
         }
 
-        function handleOfficeChange() {
-            const officeId = document.getElementById('newSurveyOffice').value;
-            const serviceSelect = document.getElementById('newSurveyService');
-            
-            serviceSelect.innerHTML = '<option value="">Select Service</option>';
-            serviceSelect.disabled = !officeId;
-            
-            if (officeId) {
-                const officeServices = services.filter(s => s.office_id == officeId);
-                officeServices.forEach(service => {
-                    const option = document.createElement('option');
-                    option.value = service.id;
-                    option.textContent = service.name;
-                    serviceSelect.appendChild(option);
-                });
-            }
-        }
+     function handleOfficeChange() {
+    // Get the IDs of the dropdowns inside the "Create Survey" modal
+    const officeId = document.getElementById('newSurveyOffice').value;
+    const serviceSelect = document.getElementById('newSurveyService');
+    
+    serviceSelect.innerHTML = '<option value="">Select Service</option>';
+    
+    if (!officeId) {
+        serviceSelect.disabled = true;
+        return;
+    }
+
+    // Filter the global 'services' array based on the selected office
+    const relevantServices = services.filter(s => s.office_id == officeId);
+    
+    if (relevantServices.length > 0) {
+        relevantServices.forEach(service => {
+            const option = document.createElement('option');
+            option.value = service.id;
+            option.textContent = service.name;
+            serviceSelect.appendChild(option);
+        });
+        serviceSelect.disabled = false; // Enable the dropdown
+    } else {
+        serviceSelect.innerHTML = '<option value="">No services for this office</option>';
+        serviceSelect.disabled = true; // Keep it disabled
+    }
+}
 
         function filterServices() {
             renderServices();
@@ -1154,39 +1172,6 @@
         }
 
 
-        async function deleteSurvey(surveyId) {
-            try {
-
-                await showConfirmationModal({
-                    title: 'Archive Survey',
-                    message: 'This will hide the survey from the main list and stop new responses.',
-                    actionText: 'Yes, Archive', //  destructive: true //Make button red
-                });
-
-                const response = await fetch(`api/surveys.php?id=${surveyId}`, { //if the user confirms, we proceed with the archival
-                    method: 'DELETE'
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    showToastNotification("Survey archived successfully!");
-                    loadSurveys(); //reload survey lists
-                } else {
-                    showToastNotification(result.message || "An error occured. Failed to archive.", "error");
-                }
-
-            } catch (error) {
-
-                if (error) {
-                    console.error("Error archiving survey:", error);
-                    showToastNotification("A network error occured.", "error");
-                } else {
-                    console.log("Survey archival was cancelled by the user.");
-                }
-
-            }
-        }
         
         function getSurveyLink(surveyId) {
             const basePath = window.location.origin + window.location.pathname.split('/').slice(0, -1).join('/');

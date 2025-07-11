@@ -2,7 +2,7 @@
 header("Content-Type: application/json");
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
+header("Access-control-allow-headers: content-type, authorization, x-requested-with");
 
 if ($_SERVER["REQUEST_METHOD"] == 'OPTIONS') {
   http_response_code(200);
@@ -11,7 +11,7 @@ if ($_SERVER["REQUEST_METHOD"] == 'OPTIONS') {
 
 require_once '../config/connection.php';
 
-// Use the same respond function for consistent API responses
+// A standardized function to send back responses. This is great practice.
 function respond($success, $message, $data = null, $code = 200) {
     http_response_code($code);
     echo json_encode([
@@ -34,178 +34,144 @@ $method = $_SERVER["REQUEST_METHOD"];
 error_log("API a/surveys.php received a request with method: " . $method);
 
 switch($method) {
-   case "GET":
-        try {
-            // Check if the request is for a SINGLE survey 
+      case "GET":
+       try {
             if (isset($_GET['id']) && is_numeric($_GET['id'])) {
-            //If an ID is provided, fetch that specific survey
                 $id = intval($_GET['id']);
-                $query = "SELECT s.*, o.name as office_name, se.name as service_name 
-                        FROM surveys s
-                        LEFT JOIN offices o ON s.office_id = o.id
-                        LEFT JOIN services se ON s.service_id = se.id
-                        WHERE s.id = :id";
-                $stmt = $db->prepare($query);
-                $stmt->bindValue(':id', $id); // Use bindValue for safety
-                $stmt->execute();
-                
+                $query = "SELECT s.*, o.name as office_name, se.name as service_name, (SELECT COUNT(*) FROM survey_responses WHERE survey_id = s.id) as response_count FROM surveys s LEFT JOIN offices o ON s.office_id = o.id LEFT JOIN services se ON s.service_id = se.id WHERE s.id = :id";
+                $stmt = $db->prepare($query); $stmt->execute([':id' => $id]);
                 $survey = $stmt->fetch(PDO::FETCH_ASSOC);
-
-                if ($survey) {
-                    // Decode the JSON string before sending it back
-                    $survey['questions_json'] = json_decode($survey['questions_json']);
-                    respond(true, "Survey retrieved successfully.", $survey);
-                } else {
-                    respond(false, "Survey not found.", null, 404);
-                }
-
+                if ($survey) { respond(true, "Survey retrieved successfully.", $survey); } else { respond(false, "Survey not found.", null, 404); }
             } else {
-                //  If no ID, then it's a request for a LIST of surveys, check if we want to show archived surveys
                 if (isset($_GET['show_archived']) && $_GET['show_archived'] == 'true') {
-                    // Get ARCHIVED surveys
-                    $query = "SELECT s.*, o.name as office_name, se.name as service_name 
-                            FROM surveys s
-                            LEFT JOIN offices o ON s.office_id = o.id
-                            LEFT JOIN services se ON s.service_id = se.id
-                            WHERE s.status = 'archived'
-                            ORDER BY s.updated_at DESC";
+                    $query = "SELECT s.*, o.name as office_name, se.name as service_name, (SELECT COUNT(*) FROM survey_responses WHERE survey_id = s.id) as response_count FROM surveys s LEFT JOIN offices o ON s.office_id = o.id LEFT JOIN services se ON s.service_id = se.id WHERE s.status = 'archived' ORDER BY s.updated_at DESC";
                 } else {
-                    // Get ACTIVE and DRAFT surveys
-                    $query = "SELECT s.*, o.name as office_name, se.name as service_name 
-                            FROM surveys s
-                            LEFT JOIN offices o ON s.office_id = o.id
-                            LEFT JOIN services se ON s.service_id = se.id
-                            WHERE s.status IN ('draft', 'active')
-                            ORDER BY s.created_at DESC";
+                    $query = "SELECT s.*, o.name as office_name, se.name as service_name, (SELECT COUNT(*) FROM survey_responses WHERE survey_id = s.id) as response_count FROM surveys s LEFT JOIN offices o ON s.office_id = o.id LEFT JOIN services se ON s.service_id = se.id WHERE s.status IN ('draft', 'active', 'inactive') ORDER BY s.created_at DESC";
                 }
-                
-                $stmt = $db->prepare($query);
-                $stmt->execute();
-                $surveys = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                respond(true, "Surveys retrieved successfully.", $surveys);
+                $stmt = $db->prepare($query); $stmt->execute();
+                respond(true, "Surveys retrieved successfully.", $stmt->fetchAll(PDO::FETCH_ASSOC));
             }
-
-        } catch (PDOException $e) {
-            respond(false, "Database error retrieving surveys: " . $e->getMessage(), null, 500);
-        }
+        } catch (PDOException $e) { respond(false, "DB error: " . $e->getMessage(), null, 500); }
         break;
 
-    case "POST":
-        // handle the creation of survey, Get the data sent from the survey builder's JavaScript
+   case "POST": // It correctly sets the status to 'active' if the action is 'publish'.
         $data = json_decode(file_get_contents("php://input"), true);
-
-        // Basic validation
         if (empty($data['title']) || empty($data['office_id']) || empty($data['service_id'])) {
             respond(false, "Title, office, and service are required.", null, 400);
         }
-
+        
+        $statusToSet = (isset($data['action']) && $data['action'] === 'publish') ? 'active' : 'draft';
+        
         try {
-            $query = "INSERT INTO surveys (title, description, office_id, service_id, status, questions_json) 
-                      VALUES (:title, :description, :office_id, :service_id, :status, :questions_json)";
-            
+            $query = "INSERT INTO surveys (title, description, office_id, service_id, status, questions_json, is_locked) VALUES (:title, :description, :office_id, :service_id, :status, :questions_json, 0)";
             $stmt = $db->prepare($query);
-
-            // the questions_json is expected to be an array of questions, so we convert it to JSON
-            $questions_json = json_encode($data['questions']);
-
-            // Bind all the parameters
+            $questions_json = json_encode($data['questions'] ?? []);
+            
             $stmt->bindValue(':title', $data['title']);
             $stmt->bindValue(':description', $data['description'] ?? '');
             $stmt->bindValue(':office_id', $data['office_id']);
             $stmt->bindValue(':service_id', $data['service_id']);
-            $stmt->bindValue(':status', $data['status'] ?? 'draft');
+            $stmt->bindValue(':status', $statusToSet);
             $stmt->bindValue(':questions_json', $questions_json);
             
             $stmt->execute();
-            
-            // Get the ID of the new survey we just created
-            $newSurveyId = $db->lastInsertId();
-            
-            respond(true, "Survey saved successfully.", ["id" => $newSurveyId]);
 
-        } catch (PDOException $e) {
-            respond(false, "Database error: " . $e->getMessage(), null, 500);
-        }
-    break;
+            $message = ($statusToSet === 'active') ? "Survey published successfully." : "Draft created successfully.";
+            respond(true, $message, ["new_id" => $db->lastInsertId()], 201);
+            
+        } catch (PDOException $e) { respond(false, "DB error on create: " . $e->getMessage(), null, 500); }
+        break;
     
-     case "PUT":
+    case "PUT": //the main router for any "update" action. he first thing to do is get the survey's ID from the URL and the 'action' command from the JSON data sent by the JavaScript. If either is missing, we can't do anything, so we stop early.
         if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
-            respond(false, "A valid Survey ID is required.", null, 400);
+            respond(false, "A valid Survey ID is required in the URL.", null, 400);
         }
         $id = intval($_GET['id']);
         $data = json_decode(file_get_contents("php://input"), true);
-        $action = $data['action'] ?? 'update_details'; 
+        $action = $data['action'] ?? null;
+
+        if (!$action) {
+            respond(false, "An 'action' command is required in the request body.", null, 400);
+        }
 
         try {
-            if ($action == 'change_status') {
-                $newStatus = $data['status'] ?? null;
-                if (!in_array($newStatus, ['draft', 'active'])) {
-                    respond(false, "Invalid status provided.", null, 400);
-                }
-                $query = "UPDATE surveys SET status = :status WHERE id = :id";
-                $stmt = $db->prepare($query);
-                $stmt->bindValue(':status', $newStatus);
-                $stmt->bindValue(':id', $id);
-                $stmt->execute();
-                respond(true, "Survey status updated to '{$newStatus}'.");
-
-            } elseif ($action == 'update_details') {
-                if (empty($data['title']) || empty($data['office_id']) || empty($data['service_id'])) {
-                    respond(false, "Title, office, and service are required.", null, 400);
-                }
-                $query = "UPDATE surveys SET title = :title, office_id = :office_id, service_id = :service_id, questions_json = :questions_json WHERE id = :id AND status = 'draft'";
-                $stmt = $db->prepare($query);
-                $questions_json = json_encode($data['questions']);
-                $stmt->bindValue(':title', $data['title']);
-                $stmt->bindValue(':office_id', $data['office_id']);
-                $stmt->bindValue(':service_id', $data['service_id']);
-                $stmt->bindValue(':questions_json', $questions_json);
-                $stmt->bindValue(':id', $id);
-                $stmt->execute();
-                if ($stmt->rowCount() > 0) {
-                    respond(true, "Survey draft updated successfully.");
-                } else {
-                    respond(false, "Update failed. Survey may be published or does not exist.", 409);
-                }
-            } else {
-                respond(false, "Invalid action specified.", null, 400);
+            switch ($action) {
+                case 'update_details':  //Handles updating the content of a draft survey. This action is triggered by the "Save" button in the survey builder. It protects data integrity by only allowing updates on surveys that are NOT locked.
+                    $query = "UPDATE surveys SET title = :title, description = :description, office_id = :office_id, service_id = :service_id, questions_json = :questions_json WHERE id = :id AND is_locked = 0";
+                    $stmt = $db->prepare($query);
+                    $stmt->execute([
+                        ':title' => $data['title'],
+                        ':description' => $data['description'] ?? '',
+                        ':office_id' => $data['office_id'],
+                        ':service_id' => $data['service_id'],
+                        ':questions_json' => json_encode($data['questions'] ?? []),
+                        ':id' => $id
+                    ]);
+                    if ($stmt->rowCount() > 0) {
+                        respond(true, "Draft saved successfully.");
+                    } else {
+                        respond(false, "Update failed. The survey may be locked or you didn't make any changes.", 409);
+                    }
+                    break;
+                case 'publish': //Handles publishing a draft survey. This action is triggered by the "Publish" button in the survey builder. It updates the survey's content and atomically sets its status to 'active'.
+                    $query = "UPDATE surveys SET title = :title, description = :description, office_id = :office_id, service_id = :service_id, questions_json = :questions_json, status = 'active' WHERE id = :id AND status = 'draft'";
+                    $stmt = $db->prepare($query);
+                    $stmt->execute([
+                         ':title' => $data['title'],
+                        ':description' => $data['description'] ?? '',
+                        ':office_id' => $data['office_id'],
+                        ':service_id' => $data['service_id'],
+                        ':questions_json' => json_encode($data['questions'] ?? []),
+                        ':id' => $id
+                    ]);
+                    if ($stmt->rowCount() > 0) {
+                        respond(true, "Survey published successfully.");
+                    } else {
+                        respond(false, "Publish failed. The survey may already be active or locked.", 409);
+                    }
+                    break;
+                case 'deactivate': // Sets an 'active' survey to 'inactive'. a reversible action from the management dashboard to temporarily pause a survey.
+                    $query = "UPDATE surveys SET status = 'inactive' WHERE id = :id AND status = 'active'";
+                    $stmt = $db->prepare($query);
+                    $stmt->execute([':id' => $id]);
+                    respond(true, "Survey has been deactivated.");
+                    break;
+                case 'reactivate': //Sets an 'inactive' survey back to 'active'. This is a reversible action from the management dashboard.
+                    $query = "UPDATE surveys SET status = 'active' WHERE id = :id AND status = 'inactive'";
+                    $stmt = $db->prepare($query);
+                    $stmt->execute([':id' => $id]);
+                    respond(true, "Survey has been reactivated.");
+                    break;
+                case 'archive': //When we archive something, we first COPY its current status ('draft', 'active', etc.)into the `status_before_archived` column, and THEN we set the main status to 'archived'.
+                    $query = "UPDATE surveys SET status_before_archived = status, status = 'archived' WHERE id = :id AND status != 'archived'";
+                    $stmt = $db->prepare($query);
+                    $stmt->execute([':id' => $id]);
+                    respond(true, "Survey has been archived.");
+                    break;
+                case 'unarchive': //Set `status_before_archived` back to NULL to clean it up for the future. Smart Unarchive" feature in action.
+                    $query = "UPDATE surveys SET status = status_before_archived, status_before_archived = NULL WHERE id = :id AND status = 'archived'";
+                    $stmt = $db->prepare($query);
+                    $stmt->execute([':id' => $id]);
+                    respond(true, "Survey has been restored from the archive.");
+                    break;
+                    
+                default:
+                    respond(false, "Invalid action specified.", null, 400);  // A fallback for any action command we don't recognize.
+                    break;
             }
         } catch (PDOException $e) {
-            respond(false, "Database error during update: " . $e->getMessage(), null, 500);
+            respond(false, "Database error: " . $e->getMessage(), null, 500);
         }
-    break;
+        break;
 
-    case "DELETE":
-        //Handlde soft deletion or archiving a surey
-        if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
-            respond(false, "A valid Survey is required for archival.", null, 400);
-        }
 
-        $id = intval($_GET['id']);
-
-        try {
-            //Soft deletion by chaing the status to archived
-            $query = "UPDATE surveys SET status = 'archived' WHERE id = :id";
-            $stmt = $db->prepare($query);
-            $stmt->bindValue(':id', $id);
-
-            if ($stmt->execute()) {
-                //check if any row was affected to cofirm if the survey existed
-                if ($stmt->rowCount() > 0) {
-                    respond(true, "Survey archived successfully.");
-                } else {
-                    respond(false, "Survey not found or already archived.", null, 404);
-                }
-            } else {
-                respond(false, "Failed to archive survey. ");
-            }
-        } catch (PDOException $e) {
-            respond(false, "Database error while archiving survey: " . $e->getMessage(), null, 500);
-        }
+   case "DELETE":
+    
+    // This action should be handled by a different, dedicated API endpoint like `api/permanent-delete-survey.php`
+    respond(false, "Permanent deletion is not supported by this endpoint. Use archive instead.", 403);
     break;
 
     default:
-    error_log("Fell into the DEFAULT case. Method was: " . $method); // This will tell us if we missed the POST case
-    respond(false, "Method not allowed", null, 405);
+        respond(false, "Method not allowed", null, 405);
 }
 ?>

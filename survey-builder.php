@@ -168,7 +168,7 @@
                             <i class="fas fa-eye mr-2"></i>
                             Preview
                         </button>
-                        <button id="saveDraft" class="border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors flex items-center">
+                        <button id="saveSurvey" class="border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors flex items-center">
                             <i class="fas fa-save mr-2"></i>
                             Save
                         </button>

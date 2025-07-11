@@ -19,9 +19,8 @@ try {
 }
 
 if ($_SERVER["REQUEST_METHOD"] == 'DELETE') { // This script ONLY handles DELETE requests.
-    
-    // Get the ID from the URL.
-    if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
+
+    if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {  // Get the ID from the URL.
         respond(false, "A valid Office ID is required for permanent deletion.", null, 400);
     }
     $id = intval($_GET['id']);

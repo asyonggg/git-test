@@ -1,348 +1,380 @@
-document.addEventListener('DOMContentLoaded', () => {
-    // 1. Get the survey ID from the page's URL.
-        const urlParams = new URLSearchParams(window.location.search);
-        const surveyId = urlParams.get('id');
+    const surveyState = {
+        surveyId: null,
+        respondent: { //  will hold the user's info (e.g., email, type).
+            type: null,
+            identifier: null,
+            // add more details here later, like their name from Google.
+        },
+        surveyData: null,
+        answers: {},
+        currentQuestionIndex: 0,
+    };
 
-        // 2. Check if an ID exists.
-        if (!surveyId) {
+    // --- The Starting Point of the Application ---
+    document.addEventListener('DOMContentLoaded', () => {
+        const urlParams = new URLSearchParams(window.location.search);  // Get the survey ID from the page's URL (e.g., ?id=35).
+        surveyState.surveyId = urlParams.get('id');
+
+        if (!surveyState.surveyId) {
+            renderError("No survey ID was provided. Please use a valid survey link.");
+            return; // Stop everything if the link is broken.
+        }
+        renderConsentStage();  // Begin the user's journey at the very first step.
+    });
+
+    const surveyContainer = document.getElementById('surveyContainer'); //main container in HTML where all content will be rendered
+
+    function initializeSurvey() {
+
+        const urlParams = new URLSearchParams(window.location.search); // Get the survey ID from the page's URL.
+        surveyState.surveyId = urlParams.get('id');
+
+        if (!surveyState.surveyId) {
             renderError("No survey ID was provided. Please use a valid survey link.");
             return; // Stop if no ID.
         }
-        
-        // 3. Start the process by showing the very first screen.
-        renderIdentificationStage(surveyId);
-    });
 
-    const surveyContainer = document.getElementById('surveyContainer');
-
-
-// --- STAGE 1: Render the "Who are you?" choice ---
-function renderIdentificationStage(surveyId) {
-    surveyContainer.innerHTML = `
-        <h1 class="text-2xl font-bold text-gray-900 mb-4 text-center">How are you connected to JRU?</h1>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-            <button id="isStudentBtn" class="bg-jru-blue text-white py-4 px-6 rounded-lg text-lg font-semibold hover:bg-blue-800 transition-colors">
-                I am a Student
-            </button>
-            <button id="isVisitorBtn" class="bg-gray-600 text-white py-4 px-6 rounded-lg text-lg font-semibold hover:bg-gray-700 transition-colors">
-                Parent / Visitor / Other
-            </button>
-        </div>
-    `;
-    // Attach event listeners to the new buttons.
-    document.getElementById('isStudentBtn').onclick = () => renderStudentForm(surveyId);
-    document.getElementById('isVisitorBtn').onclick = () => renderVisitorForm(surveyId);
-
-    document.querySelectorAll('.star-rating').forEach(starGroup => {
-    const stars = starGroup.querySelectorAll('i');
-    const hiddenInput = starGroup.nextElementSibling; // The hidden input right after the stars
-
-    starGroup.addEventListener('mouseover', (e) => {
-        if (e.target.matches('i')) {
-            const hoverValue = e.target.dataset.value;
-            stars.forEach(star => {
-                star.classList.toggle('fas', star.dataset.value <= hoverValue); // Solid star
-                star.classList.toggle('far', star.dataset.value > hoverValue);  // Outline star
-                star.classList.toggle('text-yellow-400', star.dataset.value <= hoverValue);
-                star.classList.toggle('text-gray-300', star.dataset.value > hoverValue);
-            });
-        }
-    });
-
-    starGroup.addEventListener('mouseout', () => {
-        // On mouse out, revert to the selected state
-        const selectedValue = starGroup.dataset.selectedValue || 0;
-        stars.forEach(star => {
-            star.classList.toggle('fas', star.dataset.value <= selectedValue);
-            star.classList.toggle('far', star.dataset.value > selectedValue);
-            star.classList.toggle('text-yellow-400', star.dataset.value <= selectedValue);
-            star.classList.toggle('text-gray-300', star.dataset.value > selectedValue);
-        });
-    });
-
-    starGroup.addEventListener('click', (e) => {
-        if (e.target.matches('i')) {
-            const selectedValue = e.target.dataset.value;
-            starGroup.dataset.selectedValue = selectedValue; // Store the selected value
-            hiddenInput.value = selectedValue; // UPDATE THE HIDDEN INPUT'S VALUE
-        }
-    });
-});
-
-        const emojiLabels = document.querySelectorAll('.emoji-label');
-
-emojiLabels.forEach(label => {
-    // When the mouse button is PRESSED DOWN
-    label.addEventListener('mousedown', () => {
-        // Add our special CSS class to trigger the effect
-        label.classList.add('is-pressing');
-    });
-
-    // When the mouse button is RELEASED
-    label.addEventListener('mouseup', () => {
-        // Remove the class to end the effect
-        label.classList.remove('is-pressing');
-    });
-
-    // If the mouse moves away while still being pressed, also end the effect
-    label.addEventListener('mouseleave', () => {
-        label.classList.remove('is-pressing');
-    });
-});
-}
-
-
-// --- STAGE 2 (Path A): Render the form for Students ---
-function renderStudentForm(surveyId) {
-    surveyContainer.innerHTML = `
-        <h1 class="text-2xl font-bold text-gray-900 mb-4">Student Information</h1>
-        <form id="respondentForm">
-            <div class="space-y-4">
-                <div>
-                    <label for="studentNumber" class="block text-sm font-medium text-gray-700">Student Number</label>
-                    <input type="text" id="studentNumber" name="identifier" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" placeholder="e.g., 25-123456" required>
-                </div>
-                <div>
-                    <label for="division" class="block text-sm font-medium text-gray-700">Division</label>
-                    <select id="division" name="division" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" required>
-                        <option value="">Select Division...</option>
-                        <option value="College">College</option>
-                        <option value="SHS">Senior High School</option>
-                        <option value="JHS">Junior High School</option>
-                        <option value="Law School">Law School</option>
-                        <option value="Graduate School">Graduate School</option>
-                    </select>
-                </div>
-                <div>
-                    <label for="course" class="block text-sm font-medium text-gray-700">Course / Strand (e.g., BSIT, ABM)</label>
-                    <input type="text" id="course" name="course" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm">
-                </div>
-            </div>
-            <button type="submit" class="mt-6 w-full bg-jru-blue text-white py-3 px-6 rounded-lg text-lg font-semibold hover:bg-blue-800">
-                Proceed to Survey
-            </button>
-        </form>
-    `;
-    document.getElementById('respondentForm').onsubmit = (e) => {
-        e.preventDefault();
-        const formData = new FormData(e.target);
-        const respondentData = Object.fromEntries(formData.entries());
-        respondentData.type = 'student'; // Set the type
-        fetchAndRenderSurvey(surveyId, respondentData); // Proceed to the next stage
-    };
-}
-
-
-// --- STAGE 2 (Path B): Render the form for Visitors/Others ---
-function renderVisitorForm(surveyId) {
-    surveyContainer.innerHTML = `
-        <h1 class="text-2xl font-bold text-gray-900 mb-4">Welcome!</h1>
-        <form id="respondentForm">
-            <p class="text-gray-600 mb-4">Please provide an email address to proceed. This is optional and helps us track feedback.</p>
-            <div>
-                <label for="email" class="block text-sm font-medium text-gray-700">Email Address (Optional)</label>
-                <input type="email" id="email" name="identifier" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" placeholder="you@example.com">
-            </div>
-            <button type="submit" class="mt-6 w-full bg-jru-blue text-white py-3 px-6 rounded-lg text-lg font-semibold hover:bg-blue-800">
-                Proceed to Survey
-            </button>
-        </form>
-    `;
-    document.getElementById('respondentForm').onsubmit = (e) => {
-        e.preventDefault();
-        const formData = new FormData(e.target);
-        let respondentData = Object.fromEntries(formData.entries());
-        if (!respondentData.identifier) {
-            respondentData.identifier = 'anon-' + Date.now() + Math.random();
-        }
-        respondentData.type = 'visitor'; // Set the type
-        fetchAndRenderSurvey(surveyId, respondentData); // Proceed to the next stage
-    };
-}
-
-
-// --- STAGE 3: Fetch the survey data from the API ---
-async function fetchAndRenderSurvey(surveyId, respondentData) {
-    surveyContainer.innerHTML = `<h1 class="text-2xl font-bold text-gray-900 mb-2">Loading Survey...</h1>`;
-    try {
-        const response = await fetch(`api/surveys.php?id=${surveyId}`);
-        const result = await response.json();
-        if (result.success) {
-            renderSurveyQuestions(surveyId, result.data, respondentData);
-        } else {
-            renderError(result.message);
-        }
-    } catch (error) { 
-        console.error("Error fetching survey:", error);
-        renderError("Could not load the survey. It may not exist or there was a network error.");
+        renderConsentStage(); // Consent form before taking the survey
     }
-}
 
-
-// --- STAGE 4: Render the actual survey questions ---
-    function renderSurveyQuestions(surveyId, survey, respondentData) {
+    function renderConsentStage() { // --- STAGE 0: Data Privacy Consent ---
         surveyContainer.innerHTML = `
-            <h1 class="text-2xl font-bold text-gray-900 mb-2">${survey.title}</h1>
-            <p class="text-gray-600 mb-6">${survey.description || ''}</p>
-            <form id="surveyForm"></form>
+            <h1 class="text-2xl font-bold text-gray-900 mb-4 text-center">Data Privacy Notice</h1>
+            <p class="text-gray-600 mb-6 text-center">
+                Your feedback is vital for improving our services. By proceeding, you consent to the collection and processing of your responses by José Rizal University for this purpose.
+            </p>
+            <div class="mt-6 flex justify-center">
+                <button id="agreeBtn" class="bg-jru-blue text-white py-3 px-8 rounded-lg font-semibold hover:bg-blue-800 transition-transform hover:scale-105">
+                    I Agree & Continue
+                </button>
+            </div>
         `;
-        const surveyForm = document.getElementById('surveyForm');
-        const questionsContainer = document.createElement('div');
-        questionsContainer.className = 'space-y-8'; // Increased space between questions
         
-        if (survey.questions_json && Array.isArray(survey.questions_json.questions)) {
-            survey.questions_json.questions.forEach((q, index) => {
-                const questionEl = document.createElement('div');
-                questionEl.className = 'py-4 border-b border-gray-200';
-                
-                // This is the input field HTML that will be generated
-                const inputHtml = renderInputForQuestion(q);
-                
-                questionEl.innerHTML = `
-                    <label class="block text-lg font-semibold text-gray-800 mb-2">
-                        ${index + 1}. ${q.text} ${q.required ? '<span class="text-red-500 ml-1">*</span>' : ''}
-                    </label>
-                    <p class="text-sm text-gray-500 mb-4">${q.help || ''}</p>
-                    ${inputHtml}
-                `;
-                questionsContainer.appendChild(questionEl);
-            });
-        }
-        
-        surveyForm.appendChild(questionsContainer);
-        surveyForm.innerHTML += `
-            <div class="mt-8 pt-6">
-                <button type="submit" class="w-full bg-jru-blue text-white py-3 px-6 rounded-lg text-lg font-semibold">Submit Feedback</button>
+        document.getElementById('agreeBtn').onclick = renderRoleSelectionStage; // When the user clicks "Agree", move them to the next stage.
+    }
+
+    function renderRoleSelectionStage() {  // --- STAGE 1: Role Selection ---
+        surveyContainer.innerHTML = `
+            <h1 class="text-2xl font-bold text-gray-900 mb-6 text-center">How are you connected to JRU?</h1>
+            <div class="space-y-4">
+                <button id="studentBtn" class="w-full bg-jru-blue text-white py-4 px-6 rounded-lg text-lg font-semibold hover:bg-blue-800 flex items-center justify-center space-x-3">
+                    <i class="fab fa-google"></i>
+                    <span>Sign in as JRU Student</span>
+                </button>
+                <button id="visitorBtn" class="w-full bg-gray-600 text-white py-4 px-6 rounded-lg text-lg font-semibold hover:bg-gray-700">
+                    I am a Parent, Alumni, or Visitor
+                </button>
             </div>
         `;
 
-        surveyForm.onsubmit = (e) => {
+        document.getElementById('studentBtn').onclick = handleStudentPath;  // Attach click handlers to the new buttons.
+        document.getElementById('visitorBtn').onclick = handleVisitorPath;
+    }
+
+       
+    function handleStudentPath() {  // --- STAGE 2 (Path A): The Student's Path ---
+        // TODO: This is where we will add the Google Sign-In logic in a future step.
+        
+        console.log("Student path selected. Google Sign-In will be implemented here."); // For now, will just show a placeholder message and simulate a successful login.
+        
+        const fakeGoogleData = { // Simulate getting data from Google.
+            type: 'student',
+            identifier: 'verified.student@my.jru.edu', // A fake verified email.
+            name: 'Verified Rizalian'
+        };
+         
+        surveyState.respondent = fakeGoogleData; // Save this "verified" data to our state.
+
+        // TODO: In the future, we will call an API here to verify this email against the database
+        // and create a respondent record. For now, we go directly to the survey.
+        fetchAndPrepareSurvey();
+    }
+
+    function handleVisitorPath() {  // --- STAGE 2 (Path B): The Non-students Path ---
+        console.log("Visitor path selected. Rendering manual form.");
+
+        // Render the simple form for non-students.
+        surveyContainer.innerHTML = `
+            <h1 class="text-2xl font-bold text-gray-900 mb-4">Please Provide Your Information</h1>
+            <form id="visitorForm">
+                <div class="space-y-4">
+                    <div>
+                        <label for="fullName" class="block text-sm font-medium text-gray-700">Full Name</label>
+                        <input type="text" id="fullName" name="name" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" required>
+                    </div>
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-gray-700">Email Address</label>
+                        <input type="email" id="email" name="identifier" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" required>
+                    </div>
+                </div>
+                <button type="submit" class="mt-6 w-full bg-jru-blue text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-800">
+                    Start Survey
+                </button>
+            </form>
+        `;
+
+        document.getElementById('visitorForm').onsubmit = (e) => { // Handle the form submission.
             e.preventDefault();
             const formData = new FormData(e.target);
-            const answers = [];
-
-            // Loop through the questions in our state to ensure we capture all of them
-            survey.questions_json.questions.forEach(q => {
-                const key = `q_${q.id}`;
-                // .get() works perfectly for text, textarea, and radio buttons
-                const answerValue = formData.get(key); 
-                
-                answers.push({ 
-                    question_id: q.id, 
-                    text: q.text, // Saving the question text with the answer is good for analysis
-                    answer: answerValue || null // Save null if no answer was given
-                });
-            });
             
-             const submissionData = { 
-                survey_id: surveyId, 
-                respondent: respondentData, 
-                answers: answers 
-            };
+            surveyState.respondent.type = 'non-student'; // Save the non-student data to our state.
+            surveyState.respondent.identifier = formData.get('identifier');
+            surveyState.respondent.name = formData.get('name');
             
-            // Check if all required questions have been answered
-            const missingRequired = answers.some(a => {
-                const question = survey.questions_json.questions.find(q => q.id === a.question_id);
-                return question.required && (a.answer === null || a.answer === '');
-            });
-
-            if (missingRequired) {
-                alert("Please answer all required questions (marked with *).");
-                return; // Stop the submission
-            }
-
-            submitSurveyResponse(submissionData);
+            // TODO: In the future, this will call an API to create a respondent record.
+            // For now, we go directly to the survey.
+            fetchAndPrepareSurvey();
         };
     }
 
+    function renderLoading(message) {
+        surveyContainer.innerHTML = `<div class="text-center py-8"><h1 class="text-2xl font-bold text-gray-900">${message}</h1></div>`;
+    }
 
-    // --- STAGE 5: Submit the final response to the API ---
-    async function submitSurveyResponse(submissionData) {
-        surveyContainer.innerHTML = `<h1 class="text-2xl font-bold text-gray-900 mb-2">Submitting...</h1>`;
+    // Helper function to show an error message.
+    function renderLoading(message) {
+        surveyContainer.innerHTML = `<div class="text-center py-8"><h1 class="text-2xl font-bold text-gray-900">${message}</h1></div>`;
+    }
+
+    // --- The Survey Wizard Logic (PLACEHOLDER - We will add this back) ---
+    async function fetchAndPrepareSurvey() {
+        renderLoading("Loading Survey...");
+        // For now, we'll stop here to test the new intro flow.
+        setTimeout(() => {
+            surveyContainer.innerHTML = `<div class="text-center py-8"><h1 class="text-2xl font-bold text-green-600">Flow Test Successful!</h1><p class="text-gray-700 mt-2">The next step is to load the questions. We are now ready to build that part.</p><pre class="text-left bg-gray-100 p-4 rounded-lg mt-4 text-sm">${JSON.stringify(surveyState.respondent, null, 2)}</pre></div>`;
+        }, 1000);
+    }
+
+
+    function renderQuestionStage() { // --- STAGE 3: Render the Current Question (One-at-a-time) ---
+        const questions = surveyState.surveyData.questions;
+        const currentIndex = surveyState.currentQuestionIndex;
+        const currentQuestion = questions[currentIndex];
+
+        surveyContainer.innerHTML = `
+            <div class="mb-4">
+                <p class="text-sm font-bold text-jru-blue">Question ${currentIndex + 1} of ${questions.length}</p>
+                <div class="w-full bg-gray-200 rounded-full mt-1">
+                    <div class="bg-jru-blue h-2 rounded-full" style="width: ${((currentIndex + 1) / questions.length) * 100}%"></div>
+                </div>
+            </div>
+
+            <div class="py-4">
+                <label class="block text-lg font-semibold text-gray-800 mb-2">
+                    ${currentQuestion.text} ${currentQuestion.required ? '<span class="text-red-500 ml-1">*</span>' : ''}
+                </label>
+                <p class="text-sm text-gray-500 mb-4">${currentQuestion.help || ''}</p>
+                ${renderInputForQuestion(currentQuestion)}
+            </div>
+
+            <div class="mt-8 flex justify-between items-center">
+                <button id="backBtn" class="${currentIndex === 0 ? 'invisible' : ''} bg-gray-600 text-white py-2 px-6 rounded-lg font-semibold hover:bg-gray-700">Back</button>
+                <button id="nextBtn" class="bg-jru-blue text-white py-2 px-6 rounded-lg font-semibold hover:bg-blue-800">
+                    ${currentIndex === questions.length - 1 ? 'Finish & Submit' : 'Next'}
+                </button>
+            </div>
+        `;
+
+        // Add event listeners for the new buttons and inputs
+        document.getElementById('backBtn').onclick = handleBack;
+        document.getElementById('nextBtn').onclick = handleNext;
+        
+        // Make sure star ratings and emojis are interactive
+        setupQuestionInteractivity();
+    }
+
+    function handleBack() {
+        // Check if we are not on the first question.
+        if (surveyState.currentQuestionIndex > 0) {
+            // Decrease the index to go to the previous question.
+            surveyState.currentQuestionIndex--;
+            // Re-render the question stage with the new index.
+            renderQuestionStage();
+        }
+    }
+
+    function handleNext() {
+        const questions = surveyState.surveyData.questions;
+        const currentQuestion = questions[surveyState.currentQuestionIndex];
+        const inputName = `q_${currentQuestion.id}`;
+        
+        // Find the wrapper div we created.
+        const inputWrapper = document.getElementById('question-input-wrapper');
+        let inputValue = null;
+
+        // --- The New, Simpler Way to Get the Value ---
+        // Find the actual input element within our wrapper.
+        const inputElement = inputWrapper.querySelector(`[name="${inputName}"]`);
+        
+        if (inputElement) {
+            // For radio buttons (like our emojis), we need to find the one that is checked.
+            if (inputElement.type === 'radio') {
+                const checkedRadio = inputWrapper.querySelector(`[name="${inputName}"]:checked`);
+                if (checkedRadio) {
+                    inputValue = checkedRadio.value;
+                }
+            } else {
+                // For all other types (textarea, hidden input for stars), we can just get the value directly.
+                inputValue = inputElement.value;
+            }
+        }
+        
+        // The rest of the function is the same.
+        if (currentQuestion.required && (!inputValue || inputValue.trim() === '')) {
+            alert("This question is required. Please provide an answer to continue.");
+            return;
+        }
+        
+        surveyState.answers[inputName] = inputValue;
+
+        if (surveyState.currentQuestionIndex < questions.length - 1) {
+            surveyState.currentQuestionIndex++;
+            renderQuestionStage();
+        } else {
+            submitSurveyResponse();
+        }
+    }
+
+
+    async function submitSurveyResponse() {  // --- STAGE 4: Final Submission ---
+        renderLoading("Submitting your feedback...");
+        
+        const finalAnswers = Object.entries(surveyState.answers).map(([key, value]) => {
+            const qId = key.split('_')[1];
+            const question = surveyState.surveyData.questions.find(q => q.id == qId);
+            return {
+                question_id: qId,
+                text: question.text,
+                answer: value,
+            };
+        });
+
+        const submissionData = {
+            survey_id: surveyState.surveyId,
+            respondent: surveyState.respondentData,
+            answers: finalAnswers,
+        };
+        
         try {
             const response = await fetch('api/submit-response.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(submissionData)
+                body: JSON.stringify(submissionData),
             });
             const result = await response.json();
             if (result.success) {
-                surveyContainer.innerHTML = `<div class="text-center py-8"><i class="fas fa-check-circle text-green-500 text-5xl mb-4"></i><h1 class="text-2xl font-bold text-gray-900">${result.message}</h1></div>`;
+                surveyContainer.innerHTML = `<div class="text-center py-8"><i class="fas fa-check-circle text-green-500 text-5xl mb-4"></i><h1 class="text-2xl font-bold text-gray-900">${result.message}</h1><p class="text-gray-600 mt-2">Thank you for helping us improve!</p></div>`;
             } else {
                 renderError(result.message);
             }
-        } catch (error) { 
+        } catch (error) {
             console.error("Error submitting response:", error);
             renderError("A network error occurred while submitting your feedback.");
         }
-    }                                                           
+    }
 
+    
+    function renderInputForQuestion(question) { // --- UTILITY & HELPER FUNCTIONS ---
+        const name = `q_${question.id}`;
+        const savedAnswer = surveyState.answers[name] || '';
 
+        // We will use a simple DIV as a wrapper for the inputs.
+        // We give it a unique ID so we can easily find it later.
+        let content = `<div id="question-input-wrapper">`; 
 
-        // This function generates the correct HTML for each question type.
-        function renderInputForQuestion(question) {
-            const name = `q_${question.id}`;
-            const required = question.required ? 'required' : '';
+        switch (question.type) {
+            // ... (The 'case' blocks for likert, rating, textarea remain THE SAME) ...
+        case 'likert': // Emoji Scale
+        const emojis = [
+            { emoji: '😍', value: 5, label: 'Excellent' },
+            { emoji: '😊', value: 4, label: 'Very Good' },
+            { emoji: '😐', value: 3, label: 'Good' },
+            { emoji: '😞', value: 2, label: 'Fair' },
+            { emoji: '😠', value: 1, label: 'Poor' }
+        ];
 
-            switch (question.type) {
-                case 'likert': // Emoji Scale
-                    const emojis = [
-                        { emoji: '😍', value: 5, label: 'Excellent' },
-                        { emoji: '😊', value: 4, label: 'Very Good' },
-                        { emoji: '😐', value: 3, label: 'Good' },
-                        { emoji: '😞', value: 2, label: 'Fair' },
-                        { emoji: '😠', value: 1, label: 'Poor' }
-                    ];
+        content += `
+            <div class="flex justify-center space-x-2 md:space-x-4">
+                ${emojis.map(item => `
+                    <label class="emoji-label relative flex flex-col items-center cursor-pointer text-center p-2 transition-transform duration-200 ease-in-out">
+                        
+                        <!-- The Emoji -->
+                        <span class="text-4xl md:text-5xl">${item.emoji}</span>
+                        
+                        <!-- The Text Label (starts hidden) -->
+                        <span class="emoji-text-popup mt-2 text-xs text-gray-600 font-semibold opacity-0 transition-opacity">
+                            ${item.label}
+                        </span>
+                        
+                        <!-- The Radio Button (hidden) -->
+                        <input type="radio" name="${name}" value="${item.value}" class="sr-only peer" ${savedAnswer == item.value ? 'checked' : ''}>
+                        
+                        <!-- The Checkmark Indicator -->
+                        <div class="w-4 h-4 rounded-full border-2 border-gray-300 mt-2 peer-checked:bg-jru-blue peer-checked:border-jru-blue"></div>
+                    </label>
+                `).join('')}
+            </div>`;
+        break;
+            
+            case 'rating':
+                content += `<div class="flex justify-center items-center text-4xl text-gray-300 star-rating" data-selected-value="${savedAnswer}">
+                    ${[5,4,3,2,1].map(i => `<i class="${i <= savedAnswer ? 'fas text-yellow-400' : 'far'} fa-star cursor-pointer p-1" data-value="${i}"></i>`).join('')}
+                </div>
+                <input type="hidden" name="${name}" value="${savedAnswer}">`;
+                break;
 
-                    return `
-                        <div class="flex justify-center space-x-2 md:space-x-4">
-                            ${emojis.map(item => `
-                                <!-- Each emoji is a 'label' which is good for accessibility -->
-                                <label class="emoji-label flex flex-col items-center cursor-pointer text-center group transition-transform duration-200 ease-in-out hover:scale-110">
-                                    
-                                    <!-- Container for the emoji and the number pop-up -->
-                                    <div class="relative">
-                                        <span class="text-4xl md:text-5xl">${item.emoji}</span>
-                                        
-                                        <!-- The number that appears on press. Starts hidden. -->
-                                        <span class="absolute -top-4 -right-2 text-xl font-bold text-jru-blue opacity-0 transition-all duration-200 number-popup">
-                                            ${item.value}
-                                        </span>
-                                    </div>
-
-                                    <!-- The text label that appears on hover -->
-                                    <span class="mt-2 text-xs text-gray-500 font-bold opacity-0 group-hover:opacity-100 transition-opacity">
-                                        ${item.label}
-                                    </span>
-                                    
-                                    <!-- The actual radio button, visually hidden -->
-                                    <input type="radio" name="${name}" value="${item.value}" class="sr-only peer" ${required}>
-                                    
-                                    <!-- The checkmark indicator -->
-                                    <div class="w-4 h-4 rounded-full border-2 border-gray-300 mt-2 peer-checked:bg-jru-blue peer-checked:border-jru-blue"></div>
-                                </label>
-                            `).join('')}
-                        </div>`;
-
-                case 'rating': //Star Rating
-                    return `
-                        <div class="flex justify-center items-center text-4xl text-gray-300 star-rating">
-                            ${[5,4,3,2,1].map(i => `<i class="far fa-star cursor-pointer p-1" data-value="${i}"></i>`).join('')}
-                        </div>
-                        <input type="radio" name="${name}" value="" class="hidden" ${required}>`;
-
-                case 'textarea': // This is our Text Entry for sentiments
-                    return `<textarea name="${name}" rows="4" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-jru-blue" placeholder="Please share any additional comments or suggestions..."></textarea>`;
-
-                // We are removing the simple 'text' input for now to keep it focused.
-                
-                default:
-                    return `<p class="text-red-500 italic">This question type is not currently supported.</p>`;
-            }
+            case 'textarea':
+                content += `<textarea name="${name}" rows="4" class="w-full p-3 border border-gray-300 rounded-lg">${savedAnswer}</textarea>`;
+                break;
+            
+            default:
+                content += `<p class="text-red-500 italic">This question type is not supported.</p>`;
         }
+        
+        // Close the DIV tag instead of the FORM tag.
+        content += '</div>';
+        return content;
+    }
 
+    function setupQuestionInteractivity() {
+        // Emoji Hover Interactivity
+        document.querySelectorAll('.emoji-label').forEach(label => {
+            const textPopup = label.querySelector('.emoji-text-popup');
+            
+            // When the mouse enters the label area
+            label.addEventListener('mouseenter', () => {
+                label.style.transform = 'scale(1.15)'; // Enlarge the whole label
+                if (textPopup) {
+                    textPopup.style.opacity = '1'; // Make text visible
+                }
+            });
 
-// --- UTILITY: A helper function to render errors ---
-function renderError(message) {
-    surveyContainer.innerHTML = `<h1 class="text-2xl font-bold text-red-600">Error</h1><p class="text-gray-700">${message}</p>`;
-}
+            // When the mouse leaves the label area
+            label.addEventListener('mouseleave', () => {
+                label.style.transform = 'scale(1)'; // Return to normal size
+                if (textPopup) {
+                    textPopup.style.opacity = '0'; // Make text invisible
+                }
+            });
+        });
+        
+        // Re-check selected radio button for emojis
+        document.querySelectorAll('.emoji-label input[type="radio"]').forEach(radio => {
+            radio.addEventListener('change', () => {
+                // Un-style all siblings
+                radio.closest('.flex').querySelectorAll('.emoji-label .w-4').forEach(div => div.classList.remove('bg-jru-blue', 'border-jru-blue'));
+                // Style the selected one
+                if(radio.checked) {
+                    radio.nextElementSibling.classList.add('bg-jru-blue', 'border-jru-blue');
+                }
+            });
+        });
+    }
+
+    function renderLoading(message) {
+        surveyContainer.innerHTML = `<div class="text-center py-8"><h1 class="text-2xl font-bold text-gray-900">${message}</h1></div>`;
+    }
+
+    function renderError(message) {
+        surveyContainer.innerHTML = `<div class="text-center py-8 bg-red-50 p-6 rounded-lg"><i class="fas fa-exclamation-triangle text-red-500 text-4xl mb-4"></i><h1 class="text-2xl font-bold text-red-600">An Error Occurred</h1><p class="text-gray-700 mt-2">${message}</p></div>`;
+    }

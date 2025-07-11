@@ -162,8 +162,10 @@
                 document.getElementById(id).addEventListener('change', renderPreview);
             });
             document.getElementById('previewSurvey').addEventListener('click', previewSurvey);  // Preview and save buttons
-            document.getElementById('saveDraft').addEventListener('click', saveDraft);
-            document.getElementById('publishSurvey').addEventListener('click', publishSurvey);
+            document.getElementById('saveSurvey').addEventListener('click', () => saveSurvey('update_details'));
+             document.getElementById('publishSurvey').addEventListener('click', () => saveSurvey('publish'));
+
+            
         }
 
 
@@ -221,34 +223,48 @@
 
 
         async function loadSurveyForEditing(surveyId) {
-            console.log(`Fetching data for survey ID: ${surveyId}`);
-            try {
-                const response = await fetch(`api/surveys.php?id=${surveyId}`);
-                const result = await response.json();
+    console.log(`Fetching data for survey ID: ${surveyId}`);
+    try {
+        const response = await fetch(`api/surveys.php?id=${surveyId}`);
+        const result = await response.json();
 
-                if (result.success) {
-                    const survey = result.data;
-                    document.getElementById('surveyTitle').value = survey.title;
-                    document.getElementById('surveyOffice').value = survey.office_id;
-                    
-                    handleBuilderOfficeChange();
-                    document.getElementById('surveyService').value = survey.service_id;
-                    
-                    if (survey.questions_json && Array.isArray(survey.questions_json.questions)) {
-                        surveyQuestions = survey.questions_json.questions;
-                    } else {
-                        surveyQuestions = [];
-                    }
-                    
-                    renderQuestions();
-                    updateButtonStates(survey.status); // NEW: Update buttons based on status
-                } else {
-                    showToastNotification(result.message, 'error');
+        if (result.success) {
+            const survey = result.data;
+            document.getElementById('surveyTitle').value = survey.title;
+            document.getElementById('surveyOffice').value = survey.office_id;
+            
+            handleBuilderOfficeChange(); // Load services for the selected office
+            // Use a small timeout to allow the service dropdown to populate before setting its value
+            setTimeout(() => {
+                document.getElementById('surveyService').value = survey.service_id;
+            }, 100);
+
+            // --- THIS IS THE CRITICAL FIX FOR THE BLANK QUESTIONS ---
+            // The API sends a JSON string, so we must parse it.
+            // And we must check if it's null or empty first.
+            if (survey.questions_json) {
+                try {
+                    surveyQuestions = JSON.parse(survey.questions_json);
+                } catch(e) {
+                    console.error("Could not parse questions JSON from API:", e);
+                    surveyQuestions = []; // Default to empty if parsing fails
                 }
-            } catch (error) {
-                console.error("Error loading survey for editing:", error);
+            } else {
+                surveyQuestions = [];
             }
+            
+            renderQuestions();
+            
+            if (parseInt(survey.is_locked) === 1) {
+                // ... (your UI locking logic is correct) ...
+            }
+        } else {
+            showToastNotification(result.message, 'error');
         }
+    } catch (error) {
+        console.error("Error loading survey for editing:", error);
+    }
+}
 
         function updateButtonStates(status) {
             const saveBtn = document.getElementById('saveDraft');
@@ -278,58 +294,79 @@
             }
         }
 
+async function saveSurvey(action) {
+    console.log(`Attempting to save survey with action: ${action}`);
 
-        async function saveDraft() {
-            console.log("Attempting to save survey...");
-            const surveyData = {
-                title: document.getElementById('surveyTitle').value,
-                office_id: document.getElementById('surveyOffice').value,
-                service_id: document.getElementById('surveyService').value,
-                questions: { questions: surveyQuestions }, // Question nested structure
-                status: 'draft'
-            };
-            
-            if (!surveyData.title || !surveyData.office_id || !surveyData.service_id) {
-                showToastNotification("Please provide a title, office, and service.", "error");
-                return;
-            }
-            
-            try {
-                let response;
-                let url;
-                let method;
+    const surveyTitle = document.getElementById('surveyTitle').value;
+    const officeId = document.getElementById('surveyOffice').value;
+    const serviceId = document.getElementById('surveyService').value;
 
-                if (currentSurveyId) {
-                    console.log("This is an UPDATE for survey ID:", currentSurveyId); // UPDATING an existing survey.
-                    url = `api/surveys.php?id=${currentSurveyId}`; // Add the ID to the URL
-                    method = 'PUT'; // Set the method to PUT
-                } else {
-                    console.log("This is a new survey CREATE.");  // This is the CREATE logic, which is already working.
-                    url = 'api/surveys.php';
-                    method = 'POST';
-                }
-                
-                response = await fetch(url, {
-                    method: method, // Use the dynamic method
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(surveyData)
-                });
-                
-                const result = await response.json();
-
-                if (result.success) {
-                    showToastNotification('Survey saved successfully!', 'success');// If we just created a new survey, store its ID.
-                    if (result.data && result.data.id) {
-                        currentSurveyId = result.data.id;
-                    }
-                } else {
-                    showToastNotification(result.message || 'Failed to save.', 'error');
-                }
-            } catch (error) {
-                console.error("Error saving survey:", error);
-                showToastNotification('A network error occurred.', 'error');
-            }
+    if (!surveyTitle || !officeId || !serviceId) {
+        showToastNotification("Please provide a Title, Office, and Service.", "error");
+        return;
+    }
+    
+    if (action === 'publish') {
+         try {
+            await showConfirmationModal({
+                title: 'Publish Survey',
+                message: 'Once published, this survey can receive responses and will be locked if it gets a response. Are you sure?',
+                actionText: 'Yes, Publish'
+            });
+        } catch (error) {
+            console.log("Publish cancelled by user.");
+            return;
         }
+    }
+
+    const surveyData = {
+        title: surveyTitle,
+        office_id: officeId,
+        service_id: serviceId,
+        questions: surveyQuestions, // Just the array of questions
+        action: action // Tell the API if we're saving a draft or publishing
+    };
+
+    let url;
+    let method;
+
+    if (currentSurveyId) {
+        url = `api/surveys.php?id=${currentSurveyId}`;
+        method = 'PUT';
+    } else {
+        url = 'api/surveys.php';
+        method = 'POST';
+    }
+    
+    try {
+        const response = await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(surveyData)
+        });
+        const result = await response.json();
+
+        if (result.success) {
+            showToastNotification(result.message, 'success');
+            
+            // --- THIS IS THE CRITICAL FIX FOR THE DOUBLE SURVEY ---
+            // If we just created the survey, store its new ID and update the URL!
+            if (result.data && result.data.new_id) {
+                currentSurveyId = result.data.new_id;
+                window.history.pushState({}, '', `survey-builder.php?survey_id=${currentSurveyId}`);
+            }
+
+            if (action === 'publish') {
+                setTimeout(() => window.location.href = 'survey-management.php', 1500);
+            }
+        } else {
+            throw new Error(result.message || "An unknown error occurred.");
+        }
+    } catch (error) {
+        console.error("Error saving survey:", error);
+        showToastNotification(error.message, 'error');
+    }
+}
 
         
         async function publishSurvey() {
