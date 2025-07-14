@@ -137,7 +137,17 @@ CREATE TABLE `respondents` (
   `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   FOREIGN KEY (`student_id`) REFERENCES `students`(`id`) ON DELETE SET NULL
-) ENGINE=InnoDB;NGINE=InnoDB;
+) ENGINE=InnoDB;
+
+CREATE TABLE `respondents` (
+  `id` INT(11) NOT NULL AUTO_INCREMENT,
+  `respondent_type` ENUM('student', 'non-student') NOT NULL,
+  `student_id` INT(11) NULL DEFAULT NULL,
+  `identifier_email` VARCHAR(255) NULL DEFAULT NULL,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`student_id`) REFERENCES `students`(`id`) ON DELETE SET NULL
+) ENGINE=InnoDB;
 
 
 CREATE TABLE `survey_responses` (
@@ -154,11 +164,25 @@ CREATE TABLE `survey_responses` (
 
 CREATE TABLE `students` (
   `id` INT(11) NOT NULL AUTO_INCREMENT,
-  `student_number` VARCHAR(50) NOT NULL UNIQUE, -- The official student ID
-  `full_name` VARCHAR(255) NOT NULL,
-  `email` VARCHAR(255) NOT NULL UNIQUE,      -- The official @my.jru.edu or @jru.edu email
-  `division` VARCHAR(100) NULL,              -- e.g., 'College', 'SHS'
-  `course_or_strand` VARCHAR(100) NULL,      -- e.g., 'BSIT', 'ABM'
+  `student_number` VARCHAR(50) NOT NULL UNIQUE,
+  `first_name` VARCHAR(100) NOT NULL, 
+  `last_name` VARCHAR(100) NOT NULL,
+  `email` VARCHAR(255) NOT NULL UNIQUE,
+  `division` VARCHAR(100) NULL,
+  `course_or_strand` VARCHAR(100) NULL,
   PRIMARY KEY (`id`),
-  INDEX `idx_email` (`email`) -- We add an index to the email column for very fast lookups
+  INDEX `idx_email` (`email`)
 ) ENGINE=InnoDB;
+
+ALTER TABLE `students`
+  DROP COLUMN `full_name`,
+  ADD COLUMN `first_name` VARCHAR(100) NOT NULL AFTER `student_number`,
+  ADD COLUMN `last_name` VARCHAR(100) NOT NULL AFTER `first_name`;
+
+  INSERT INTO `students` (student_number, first_name, last_name, email, division, course_or_strand) 
+VALUES 
+('23-261655', 'Lyle', 'Earl', 'lyleearl.rementizo@my.jru.edu', 'College', 'BSIT');
+
+INSERT INTO `students` (student_number, full_name, email, division, course_or_strand) VALUES
+('25-123456', 'Juan Dela Cruz', 'juan.delacruz@my.jru.edu', 'College', 'BSIT'),
+('25-654321', 'Maria Clara', 'maria.clara@my.jru.edu', 'SHS', 'ABM');

@@ -1,156 +1,275 @@
+    // --- Global State Object ---
+    // Holds all information for the user's entire session.
     const surveyState = {
         surveyId: null,
-        respondent: { //  will hold the user's info (e.g., email, type).
-            type: null,
-            identifier: null,
-            // add more details here later, like their name from Google.
-        },
+        respondent: { type: null, identifier: null, first_name: null, last_name: null, id: null },
         surveyData: null,
         answers: {},
         currentQuestionIndex: 0,
     };
 
-    // --- The Starting Point of the Application ---
-    document.addEventListener('DOMContentLoaded', () => {
-        const urlParams = new URLSearchParams(window.location.search);  // Get the survey ID from the page's URL (e.g., ?id=35).
-        surveyState.surveyId = urlParams.get('id');
+    // The main HTML container where we render all our content.
+    const surveyContainer = document.getElementById('surveyContainer');
+    let isGoogleReady = false;
 
+    window.onGoogleScriptLoad = function() {
+        console.log("Checkpoint 1: Google script loaded.");
+        google.accounts.id.initialize({
+            client_id: "913799866499-p05hvm7muoaiqogtp85d0s95jiuavfuv.apps.googleusercontent.com",
+            callback: handleGoogleSignIn
+        });
+        google.accounts.id.renderButton(
+            document.getElementById("googleSignInButton"),
+            { theme: "outline", size: "large", width: "380", text: "signin_with" }
+        );
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        surveyState.surveyId = urlParams.get('id');
         if (!surveyState.surveyId) {
-            renderError("No survey ID was provided. Please use a valid survey link.");
-            return; // Stop everything if the link is broken.
+            renderError("No survey ID was provided.");
+            return;
         }
-        renderConsentStage();  // Begin the user's journey at the very first step.
+        renderConsentStage();
     });
 
-    const surveyContainer = document.getElementById('surveyContainer'); //main container in HTML where all content will be rendered
-
-    function initializeSurvey() {
-
-        const urlParams = new URLSearchParams(window.location.search); // Get the survey ID from the page's URL.
-        surveyState.surveyId = urlParams.get('id');
-
-        if (!surveyState.surveyId) {
-            renderError("No survey ID was provided. Please use a valid survey link.");
-            return; // Stop if no ID.
-        }
-
-        renderConsentStage(); // Consent form before taking the survey
-    }
-
-    function renderConsentStage() { // --- STAGE 0: Data Privacy Consent ---
+    function renderConsentStage() {
         surveyContainer.innerHTML = `
             <h1 class="text-2xl font-bold text-gray-900 mb-4 text-center">Data Privacy Notice</h1>
             <p class="text-gray-600 mb-6 text-center">
                 Your feedback is vital for improving our services. By proceeding, you consent to the collection and processing of your responses by José Rizal University for this purpose.
             </p>
             <div class="mt-6 flex justify-center">
-                <button id="agreeBtn" class="bg-jru-blue text-white py-3 px-8 rounded-lg font-semibold hover:bg-blue-800 transition-transform hover:scale-105">
+                <button id="agreeBtn" class="bg-jru-blue text-white py-3 px-8 rounded-lg font-semibold hover:bg-blue-800">
                     I Agree & Continue
                 </button>
             </div>
         `;
-        
-        document.getElementById('agreeBtn').onclick = renderRoleSelectionStage; // When the user clicks "Agree", move them to the next stage.
+        document.getElementById('agreeBtn').onclick = renderRoleSelectionStage;
     }
+            
 
-    function renderRoleSelectionStage() {  // --- STAGE 1: Role Selection ---
+    function renderRoleSelectionStage() {
+        console.log("Checkpoint 2: Rendering role selection screen.");
         surveyContainer.innerHTML = `
             <h1 class="text-2xl font-bold text-gray-900 mb-6 text-center">How are you connected to JRU?</h1>
             <div class="space-y-4">
-                <button id="studentBtn" class="w-full bg-jru-blue text-white py-4 px-6 rounded-lg text-lg font-semibold hover:bg-blue-800 flex items-center justify-center space-x-3">
-                    <i class="fab fa-google"></i>
-                    <span>Sign in as JRU Student</span>
-                </button>
-                <button id="visitorBtn" class="w-full bg-gray-600 text-white py-4 px-6 rounded-lg text-lg font-semibold hover:bg-gray-700">
-                    I am a Parent, Alumni, or Visitor
-                </button>
+                <div id="googleSignInButton"></div>
+                <button id="visitorBtn" class="w-full bg-gray-600 text-white py-4 px-6 rounded-lg text-lg font-semibold hover:bg-gray-700">I am a Parent, Alumni, or Visitor</button>
             </div>
         `;
 
-        document.getElementById('studentBtn').onclick = handleStudentPath;  // Attach click handlers to the new buttons.
         document.getElementById('visitorBtn').onclick = handleVisitorPath;
+
+        // --- The Simple, Direct Logic ---
+        // We will wait a very short moment to give the Google script a chance to load,
+        // then we will try to render the button.
+        setTimeout(() => {
+            try {
+                // Check if the 'google' object is available.
+                if (typeof google === 'undefined' || !google.accounts) {
+                    // If not, throw an error to be caught below.
+                    throw new Error("Google library not yet loaded.");
+                }
+
+                console.log("Attempting to initialize and render Google button...");
+                
+                // Initialize the library.
+                google.accounts.id.initialize({
+                    client_id: "913799866499-p05hvm7muoaiqogtp85d0s95jiuavfuv.apps.googleusercontent.com",
+                    callback: handleGoogleSignIn // Use the new, correct handler name
+                });
+
+                // Immediately render the button in the div we just created.
+                google.accounts.id.renderButton(
+                    document.getElementById("googleSignInButton"),
+                    { theme: "outline", size: "large", width: "100%", text: "signin_with" }
+                );
+                console.log("Google button rendered successfully.");
+
+            } catch (error) {
+                console.error("Could not render Google button:", error);
+                // Display a helpful error message to the user inside the button's div.
+                const googleButtonDiv = document.getElementById("googleSignInButton");
+                if(googleButtonDiv) {
+                googleButtonDiv.innerHTML = "<p class='text-center text-red-500 p-3 bg-red-50 rounded-lg'>Could not load Google Sign-In. Please check your internet connection and refresh the page.</p>";
+                }
+            }
+        }, 500); // Wait 200 milliseconds before trying.
     }
 
-       
-    function handleStudentPath() {  // --- STAGE 2 (Path A): The Student's Path ---
-        // TODO: This is where we will add the Google Sign-In logic in a future step.
+    function renderGoogleButton() {
+        const googleButtonDiv = document.getElementById("googleSignInButton");
         
-        console.log("Student path selected. Google Sign-In will be implemented here."); // For now, will just show a placeholder message and simulate a successful login.
-        
-        const fakeGoogleData = { // Simulate getting data from Google.
+        // A safety check: if we are not on the role selection screen, the div won't exist.
+        if (googleButtonDiv) {
+            console.log("  > Div found. Rendering button now!");
+            google.accounts.id.renderButton(
+                googleButtonDiv,
+                { theme: "outline", size: "large", width: "380", text: "signin_with" }
+            );
+        } else {
+            console.log("  > Div not found yet. Button will be rendered when the user gets to that screen.");
+        }
+    }
+
+    async function handleGoogleSignIn(googleResponse) {
+        const userInfo = parseJWT(googleResponse.credential);
+        if (!userInfo) {
+            renderError("Could not verify your identity. Please try again.");
+            return;
+        }
+
+        if (!userInfo.email.endsWith('@my.jru.edu') && !userInfo.email.endsWith('@jru.edu.ph')) {
+            renderError("Sign-in failed. Please use a valid JRU email account.");
+            return;
+        }
+        const dataToSend = {
             type: 'student',
-            identifier: 'verified.student@my.jru.edu', // A fake verified email.
-            name: 'Verified Rizalian'
+            identifier: userInfo.email,
+            first_name: userInfo.given_name, // Get first name from Google
+            last_name: userInfo.family_name   // Get last name from Google
         };
-         
-        surveyState.respondent = fakeGoogleData; // Save this "verified" data to our state.
-
-        // TODO: In the future, we will call an API here to verify this email against the database
-        // and create a respondent record. For now, we go directly to the survey.
-        fetchAndPrepareSurvey();
+        registerAndProceed(dataToSend);
     }
 
-    function handleVisitorPath() {  // --- STAGE 2 (Path B): The Non-students Path ---
-        console.log("Visitor path selected. Rendering manual form.");
 
-        // Render the simple form for non-students.
+
+    function handleVisitorPath() {
         surveyContainer.innerHTML = `
             <h1 class="text-2xl font-bold text-gray-900 mb-4">Please Provide Your Information</h1>
+            <p class="text-sm text-gray-600 mb-4">Your name and email are required to proceed.</p>
             <form id="visitorForm">
                 <div class="space-y-4">
                     <div>
-                        <label for="fullName" class="block text-sm font-medium text-gray-700">Full Name</label>
-                        <input type="text" id="fullName" name="name" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" required>
+                        <label for="firstName" class="block text-sm font-medium text-gray-700">First Name</label>
+                        <input type="text" id="firstName" name="first_name" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" required>
+                    </div>
+                    <div>
+                        <label for="lastName" class="block text-sm font-medium text-gray-700">Last Name</label>
+                        <input type="text" id="lastName" name="last_name" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" required>
                     </div>
                     <div>
                         <label for="email" class="block text-sm font-medium text-gray-700">Email Address</label>
-                        <input type="email" id="email" name="identifier" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" required>
+                        <input type="email" id="email" name="identifier" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" required>
                     </div>
                 </div>
-                <button type="submit" class="mt-6 w-full bg-jru-blue text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-800">
-                    Start Survey
-                </button>
+                <button type="submit" class="mt-6 w-full bg-jru-blue text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-800">Start Survey</button>
             </form>
         `;
-
-        document.getElementById('visitorForm').onsubmit = (e) => { // Handle the form submission.
+        document.getElementById('visitorForm').onsubmit = (e) => {
             e.preventDefault();
             const formData = new FormData(e.target);
-            
-            surveyState.respondent.type = 'non-student'; // Save the non-student data to our state.
-            surveyState.respondent.identifier = formData.get('identifier');
-            surveyState.respondent.name = formData.get('name');
-            
-            // TODO: In the future, this will call an API to create a respondent record.
-            // For now, we go directly to the survey.
-            fetchAndPrepareSurvey();
+            const dataToSend = {
+                type: 'non-student',
+                identifier: formData.get('identifier'),
+                first_name: formData.get('first_name'),
+                last_name: formData.get('last_name')
+            };
+            registerAndProceed(dataToSend);
         };
     }
 
-    function renderLoading(message) {
-        surveyContainer.innerHTML = `<div class="text-center py-8"><h1 class="text-2xl font-bold text-gray-900">${message}</h1></div>`;
+    async function registerAndProceed(dataToSend) {
+        renderLoading("Registering your session...");
+        try {
+            // This API endpoint name 'register-respondent.php' is correct.
+            const response = await fetch('api/register-respondent.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dataToSend)
+            });
+            const result = await response.json();
+            if (result.success) {
+                surveyState.respondent = dataToSend;
+                surveyState.respondent.id = result.data.respondent_id;
+                
+                // Show a brief, personalized welcome message
+                surveyContainer.innerHTML = `
+                    <div class="text-center py-8">
+                        <i class="fas fa-check-circle text-green-500 text-5xl mb-4"></i>
+                        <h1 class="text-2xl font-bold text-green-600">Verification Successful!</h1>
+                        <p class="text-gray-600 mt-2">Welcome, ${dataToSend.first_name}!</p>
+                    </div>
+                `;
+                setTimeout(() => fetchAndPrepareSurvey(), 2500); // Wait 1.5s before starting the survey
+                
+            } else {
+                renderError(result.message);
+            }
+        } catch (error) {
+            renderError("An error occurred while registering your session.");
+        }
     }
 
-    // Helper function to show an error message.
-    function renderLoading(message) {
-        surveyContainer.innerHTML = `<div class="text-center py-8"><h1 class="text-2xl font-bold text-gray-900">${message}</h1></div>`;
+    // --- Helper Functions (including custom JWT parser) ---
+    function parseJWT(token) {
+        try {
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+            return JSON.parse(jsonPayload);
+        } catch (e) { return null; }
     }
 
-    // --- The Survey Wizard Logic (PLACEHOLDER - We will add this back) ---
+     function renderError(message) {
+        surveyContainer.innerHTML = `<div class="text-center py-8 bg-red-50 p-6 rounded-lg"><i class="fas fa-exclamation-triangle text-red-500 text-4xl mb-4"></i><h1 class="text-2xl font-bold text-red-600">An Error Occurred</h1><p class="text-gray-700 mt-2">${message}</p></div>`;
+    }
+
+    function renderLoading(message) {
+        surveyContainer.innerHTML = `
+            <div class="text-center py-8">
+                <h1 class="text-2xl font-bold text-gray-900">${message}</h1>
+                <!-- Optional: You could add a spinning icon here for a better visual effect -->
+                <i class="fas fa-spinner fa-spin text-jru-blue text-4xl mt-4"></i>
+            </div>
+        `;
+    }
+
+
     async function fetchAndPrepareSurvey() {
+        // Get the ID from our global state object. This is our single source of truth.
+        const id = surveyState.surveyId;
+
+        // A safety check to make sure the ID actually exists before we make an API call.
+        if (!id) {
+            renderError("Cannot load survey because the ID is missing.");
+            return;
+        }
+
+        console.log("About to fetch survey. Using ID from state:", id);
         renderLoading("Loading Survey...");
-        // For now, we'll stop here to test the new intro flow.
-        setTimeout(() => {
-            surveyContainer.innerHTML = `<div class="text-center py-8"><h1 class="text-2xl font-bold text-green-600">Flow Test Successful!</h1><p class="text-gray-700 mt-2">The next step is to load the questions. We are now ready to build that part.</p><pre class="text-left bg-gray-100 p-4 rounded-lg mt-4 text-sm">${JSON.stringify(surveyState.respondent, null, 2)}</pre></div>`;
-        }, 1000);
+
+        try {
+            // Use the local 'id' variable in the fetch call.
+            const response = await fetch(`api/surveys.php?id=${id}`);
+            const result = await response.json();
+
+            if (result.success && result.data.questions_json) {
+                surveyState.surveyData = result.data;
+                surveyState.surveyData.questions = JSON.parse(result.data.questions_json);
+
+                if (Array.isArray(surveyState.surveyData.questions) && surveyState.surveyData.questions.length > 0) {
+                    surveyState.currentQuestionIndex = 0;
+                    renderQuestionStage();
+                } else {
+                    renderError("This survey has no questions yet.");
+                }
+            } else {
+                renderError(result.message || "Survey could not be loaded or is empty.");
+            }
+        } catch (error) {
+            console.error("Error fetching survey:", error);
+            renderError("Could not load the survey. It may not exist or there was a network error.");
+        }
     }
 
 
-    function renderQuestionStage() { // --- STAGE 3: Render the Current Question (One-at-a-time) ---
+    function renderQuestionStage() {
         const questions = surveyState.surveyData.questions;
         const currentIndex = surveyState.currentQuestionIndex;
         const currentQuestion = questions[currentIndex];
-
         surveyContainer.innerHTML = `
             <div class="mb-4">
                 <p class="text-sm font-bold text-jru-blue">Question ${currentIndex + 1} of ${questions.length}</p>
@@ -158,76 +277,52 @@
                     <div class="bg-jru-blue h-2 rounded-full" style="width: ${((currentIndex + 1) / questions.length) * 100}%"></div>
                 </div>
             </div>
-
             <div class="py-4">
-                <label class="block text-lg font-semibold text-gray-800 mb-2">
-                    ${currentQuestion.text} ${currentQuestion.required ? '<span class="text-red-500 ml-1">*</span>' : ''}
-                </label>
+                <label class="block text-lg font-semibold text-gray-800 mb-2">${currentQuestion.text} ${currentQuestion.required ? '<span class="text-red-500 ml-1">*</span>' : ''}</label>
                 <p class="text-sm text-gray-500 mb-4">${currentQuestion.help || ''}</p>
                 ${renderInputForQuestion(currentQuestion)}
             </div>
-
+            <div id="warning-spot" class="mt-4"></div>
             <div class="mt-8 flex justify-between items-center">
                 <button id="backBtn" class="${currentIndex === 0 ? 'invisible' : ''} bg-gray-600 text-white py-2 px-6 rounded-lg font-semibold hover:bg-gray-700">Back</button>
-                <button id="nextBtn" class="bg-jru-blue text-white py-2 px-6 rounded-lg font-semibold hover:bg-blue-800">
-                    ${currentIndex === questions.length - 1 ? 'Finish & Submit' : 'Next'}
-                </button>
+                <button id="nextBtn" class="bg-jru-blue text-white py-2 px-6 rounded-lg font-semibold hover:bg-blue-800">${currentIndex === questions.length - 1 ? 'Finish & Submit' : 'Next'}</button>
             </div>
         `;
-
-        // Add event listeners for the new buttons and inputs
         document.getElementById('backBtn').onclick = handleBack;
         document.getElementById('nextBtn').onclick = handleNext;
-        
-        // Make sure star ratings and emojis are interactive
         setupQuestionInteractivity();
     }
 
     function handleBack() {
-        // Check if we are not on the first question.
         if (surveyState.currentQuestionIndex > 0) {
-            // Decrease the index to go to the previous question.
             surveyState.currentQuestionIndex--;
-            // Re-render the question stage with the new index.
             renderQuestionStage();
         }
     }
 
     function handleNext() {
-        const questions = surveyState.surveyData.questions;
-        const currentQuestion = questions[surveyState.currentQuestionIndex];
+        const currentQuestion = surveyState.surveyData.questions[surveyState.currentQuestionIndex];
         const inputName = `q_${currentQuestion.id}`;
-        
-        // Find the wrapper div we created.
         const inputWrapper = document.getElementById('question-input-wrapper');
         let inputValue = null;
-
-        // --- The New, Simpler Way to Get the Value ---
-        // Find the actual input element within our wrapper.
         const inputElement = inputWrapper.querySelector(`[name="${inputName}"]`);
-        
         if (inputElement) {
-            // For radio buttons (like our emojis), we need to find the one that is checked.
             if (inputElement.type === 'radio') {
                 const checkedRadio = inputWrapper.querySelector(`[name="${inputName}"]:checked`);
-                if (checkedRadio) {
-                    inputValue = checkedRadio.value;
-                }
+                if (checkedRadio) inputValue = checkedRadio.value;
             } else {
-                // For all other types (textarea, hidden input for stars), we can just get the value directly.
                 inputValue = inputElement.value;
             }
         }
-        
-        // The rest of the function is the same.
+        const warningSpot = document.getElementById('warning-spot');
         if (currentQuestion.required && (!inputValue || inputValue.trim() === '')) {
-            alert("This question is required. Please provide an answer to continue.");
+            warningSpot.innerHTML = `<div class="text-red-600 font-semibold text-sm p-3 bg-red-50 rounded-lg"><i class="fas fa-exclamation-circle mr-2"></i>This question is required.</div>`;
+            setTimeout(() => { warningSpot.innerHTML = ''; }, 3000);
             return;
         }
-        
+        warningSpot.innerHTML = '';
         surveyState.answers[inputName] = inputValue;
-
-        if (surveyState.currentQuestionIndex < questions.length - 1) {
+        if (surveyState.currentQuestionIndex < surveyState.surveyData.questions.length - 1) {
             surveyState.currentQuestionIndex++;
             renderQuestionStage();
         } else {
@@ -235,46 +330,35 @@
         }
     }
 
-
-    async function submitSurveyResponse() {  // --- STAGE 4: Final Submission ---
+    async function submitSurveyResponse() {
         renderLoading("Submitting your feedback...");
-        
         const finalAnswers = Object.entries(surveyState.answers).map(([key, value]) => {
             const qId = key.split('_')[1];
             const question = surveyState.surveyData.questions.find(q => q.id == qId);
-            return {
-                question_id: qId,
-                text: question.text,
-                answer: value,
-            };
+            return { question_id: qId, text: question ? question.text : 'Unknown', answer: value };
         });
-
-        const submissionData = {
-            survey_id: surveyState.surveyId,
-            respondent: surveyState.respondentData,
-            answers: finalAnswers,
-        };
-        
+        const finalSubmissionData = { survey_id: surveyState.surveyId, respondent: surveyState.respondent, answers: finalAnswers };
         try {
             const response = await fetch('api/submit-response.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(submissionData),
+                body: JSON.stringify(finalSubmissionData)
             });
             const result = await response.json();
             if (result.success) {
-                surveyContainer.innerHTML = `<div class="text-center py-8"><i class="fas fa-check-circle text-green-500 text-5xl mb-4"></i><h1 class="text-2xl font-bold text-gray-900">${result.message}</h1><p class="text-gray-600 mt-2">Thank you for helping us improve!</p></div>`;
+                surveyContainer.innerHTML = `<div class="text-center py-8">
+                <i class="fas fa-check-circle text-green-500 text-5xl mb-4"></i>
+                <h1 class="text-2xl font-bold text-gray-900">${result.message}</h1>
+                <p class="text-gray-600 mt-2">Thank you for helping us improve!</p></div>`;
             } else {
                 renderError(result.message);
             }
         } catch (error) {
-            console.error("Error submitting response:", error);
             renderError("A network error occurred while submitting your feedback.");
         }
     }
 
-    
-    function renderInputForQuestion(question) { // --- UTILITY & HELPER FUNCTIONS ---
+   function renderInputForQuestion(question) { // --- UTILITY & HELPER FUNCTIONS ---
         const name = `q_${question.id}`;
         const savedAnswer = surveyState.answers[name] || '';
 
@@ -336,7 +420,7 @@
         return content;
     }
 
-    function setupQuestionInteractivity() {
+     function setupQuestionInteractivity() {
         // Emoji Hover Interactivity
         document.querySelectorAll('.emoji-label').forEach(label => {
             const textPopup = label.querySelector('.emoji-text-popup');
@@ -369,12 +453,4 @@
                 }
             });
         });
-    }
-
-    function renderLoading(message) {
-        surveyContainer.innerHTML = `<div class="text-center py-8"><h1 class="text-2xl font-bold text-gray-900">${message}</h1></div>`;
-    }
-
-    function renderError(message) {
-        surveyContainer.innerHTML = `<div class="text-center py-8 bg-red-50 p-6 rounded-lg"><i class="fas fa-exclamation-triangle text-red-500 text-4xl mb-4"></i><h1 class="text-2xl font-bold text-red-600">An Error Occurred</h1><p class="text-gray-700 mt-2">${message}</p></div>`;
     }

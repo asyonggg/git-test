@@ -334,8 +334,8 @@
         console.log(`Attempting to load surveys... (Archived view: ${isShowingArchivedSurveys})`);  // We now use the global state variable to log the current mode.
         
         const apiUrl = isShowingArchivedSurveys 
-            ? 'api/surveys.php?show_archived=true' 
-            : 'api/surveys.php'; // We build the API URL dynamically based on the toggle's state.
+        ? 'api/surveys.php?show_archived=true&dashboard=true' 
+        : 'api/surveys.php?dashboard=true'; // We build the API URL dynamically based on the toggle's state.
 
         try {
             const response = await fetch(apiUrl);  // We use the new 'apiUrl' variable in the fetch call.
@@ -495,14 +495,14 @@
                     actionButtons = `
                         ${viewBtn}
                         ${linkBtn}
-                        ${duplicateBtn} 
+                       <!-- ${duplicateBtn} -->
                         <button data-action="${toggleAction}" data-id="${survey.id}" class="text-gray-500 hover:text-orange-600" title="${toggleTitle}"><i class="fas ${toggleIcon}"></i></button>
                         ${archiveBtn}`;
                     break;
                 case 'archived':
                     actionButtons = `
                         ${viewBtn}
-                        ${duplicateBtn} 
+                        <!-- ${duplicateBtn} -->
                         <button data-action="unarchive" data-id="${survey.id}" class="text-gray-500 hover:text-green-600" title="Unarchive Survey"><i class="fas fa-box-open"></i></button>
                         <button onclick="permanentlyDeleteSurvey(${survey.id})" class="text-gray-500 hover:text-red-600" title="Permanently Delete"><i class="fas fa-trash-alt"></i></button>`;
                     break;

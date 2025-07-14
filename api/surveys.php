@@ -35,23 +35,46 @@ error_log("API a/surveys.php received a request with method: " . $method);
 
 switch($method) {
       case "GET":
-       try {
-            if (isset($_GET['id']) && is_numeric($_GET['id'])) {
-                $id = intval($_GET['id']);
-                $query = "SELECT s.*, o.name as office_name, se.name as service_name, (SELECT COUNT(*) FROM survey_responses WHERE survey_id = s.id) as response_count FROM surveys s LEFT JOIN offices o ON s.office_id = o.id LEFT JOIN services se ON s.service_id = se.id WHERE s.id = :id";
-                $stmt = $db->prepare($query); $stmt->execute([':id' => $id]);
+        // The GET request for a specific survey MUST have an ID.
+        if (isset($_GET['id']) && is_numeric($_GET['id'])) {
+            $id = intval($_GET['id']);
+            try {
+                // This is the logic for the "take-survey" page.
+                $query = "SELECT * FROM surveys WHERE id = :id";
+                $stmt = $db->prepare($query);
+                $stmt->execute([':id' => $id]);
                 $survey = $stmt->fetch(PDO::FETCH_ASSOC);
-                if ($survey) { respond(true, "Survey retrieved successfully.", $survey); } else { respond(false, "Survey not found.", null, 404); }
-            } else {
+
+                if ($survey) {
+                    // IMPORTANT: We now use a specific success message for a single survey.
+                    respond(true, "Single survey retrieved successfully.", $survey);
+                } else {
+                    respond(false, "Survey not found with this ID.", null, 404);
+                }
+            } catch (PDOException $e) {
+                respond(false, "DB error: " . $e->getMessage(), null, 500);
+            }
+        } 
+        // This part is ONLY for the admin dashboard.
+        else if (isset($_GET['dashboard'])) {
+            try {
+                // This logic is for the admin dashboard to get lists of surveys.
                 if (isset($_GET['show_archived']) && $_GET['show_archived'] == 'true') {
                     $query = "SELECT s.*, o.name as office_name, se.name as service_name, (SELECT COUNT(*) FROM survey_responses WHERE survey_id = s.id) as response_count FROM surveys s LEFT JOIN offices o ON s.office_id = o.id LEFT JOIN services se ON s.service_id = se.id WHERE s.status = 'archived' ORDER BY s.updated_at DESC";
                 } else {
                     $query = "SELECT s.*, o.name as office_name, se.name as service_name, (SELECT COUNT(*) FROM survey_responses WHERE survey_id = s.id) as response_count FROM surveys s LEFT JOIN offices o ON s.office_id = o.id LEFT JOIN services se ON s.service_id = se.id WHERE s.status IN ('draft', 'active', 'inactive') ORDER BY s.created_at DESC";
                 }
-                $stmt = $db->prepare($query); $stmt->execute();
-                respond(true, "Surveys retrieved successfully.", $stmt->fetchAll(PDO::FETCH_ASSOC));
+                $stmt = $db->prepare($query);
+                $stmt->execute();
+                respond(true, "Survey list retrieved successfully.", $stmt->fetchAll(PDO::FETCH_ASSOC));
+            } catch (PDOException $e) {
+                respond(false, "DB error: " . $e->getMessage(), null, 500);
             }
-        } catch (PDOException $e) { respond(false, "DB error: " . $e->getMessage(), null, 500); }
+        }
+        // If neither of the above conditions are met, it's a bad request.
+        else {
+            respond(false, "A valid Survey ID is required for this page.", null, 400);
+        }
         break;
 
    case "POST": // It correctly sets the status to 'active' if the action is 'publish'.

@@ -54,7 +54,9 @@
             </form>
         </div>
     </div>
-
-    <script src="js/take-survey.js"></script>
+        
+    <!-- 1. We load the Google library. No 'onload' parameter. -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+        <script src="js/take-survey.js"></script>
 </body>
 </html>
