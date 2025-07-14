@@ -564,6 +564,46 @@
         </div>
     </div>
 
+    <div id="shareSurveyModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-xl max-w-md w-full">
+        <!-- Modal Header -->
+        <div class="p-6 border-b border-gray-200 flex justify-between items-center">
+            <h2 class="text-xl font-bold text-gray-900">Share Survey</h2>
+            <button id="closeShareModal" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        
+        <!-- Modal Body -->
+        <div class="p-6 text-center">
+            <p class="text-sm text-gray-600 mb-4">Share this survey via the link or QR code below.</p>
+            
+            <!-- QR Code will be generated here -->
+            <div id="qrcode" class="flex justify-center mb-4 p-4 border rounded-lg">
+                <!-- The qrcode.js library will draw a canvas element here -->
+            </div>
+
+            <!-- The Link Input -->
+            <div class="relative">
+                <input type="text" id="shareLinkInput" class="w-full bg-gray-50 border border-gray-300 rounded-lg pl-4 pr-24 py-2 text-sm" readonly>
+                <button id="copyLinkBtn" class="absolute right-1 top-1/2 -translate-y-1/2 bg-jru-blue text-white px-3 py-1 rounded-md text-xs hover:bg-blue-800">
+                    Copy
+                </button>
+            </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="bg-gray-50 px-6 py-4 flex justify-end space-x-4 rounded-b-xl">
+            <button id="downloadQrBtn" class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700">
+                <i class="fas fa-download mr-2"></i>Download QR Code
+            </button>
+            <button id="doneShareBtn" type="button" class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
+                Done
+            </button>
+        </div>
+    </div>
+</div>
+
         <!-- Reusable Confirmation Modal -->
     <div id="confirmationModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
         <div class="flex items-center justify-center min-h-screen p-4">
@@ -604,11 +644,12 @@
 
     <!-- Success and Error Modal -->
     <div id="toastNotification" class="fixed top-5 right-5 text-white py-3 px-6 rounded-lg shadow-xl z-[100] transition-all duration-300 ease-in-out opacity-0 hidden">
-    <div class="flex items-center">
-        <i id="toastIcon" class="mr-3 text-xl"></i>
-        <span id="toastMessage" class="font-medium"></span>
+        <div class="flex items-center">
+            <i id="toastIcon" class="mr-3 text-xl"></i>
+            <span id="toastMessage" class="font-medium"></span>
+        </div>
     </div>
-    </div>
+     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 
     <script src="js/survey-management.js"> </script>
 </body>

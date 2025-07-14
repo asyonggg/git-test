@@ -6,6 +6,7 @@
     const quickActionsHeader = document.getElementById('quickActionsHeader');
 
     let sidebarCollapsed = false;
+    let qrCodeObject = null;
 
     function toggleSidebar(){
         sidebarCollapsed = !sidebarCollapsed;
@@ -104,6 +105,11 @@
         document.getElementById('showArchivedToggleOffices').addEventListener('change', handleShowArchivedToggleOffices);
         document.getElementById('showArchivedToggleServices').addEventListener('change', handleShowArchivedServices);
         document.getElementById('officeFilter').addEventListener('change', filterServices);
+
+        document.getElementById('closeShareModal').addEventListener('click', closeShareModal);
+        document.getElementById('doneShareBtn').addEventListener('click', closeShareModal);
+        document.getElementById('copyLinkBtn').addEventListener('click', copyShareLink);
+        document.getElementById('downloadQrBtn').addEventListener('click', downloadQrCode);
 
         const showArchivedToggleSurveys = document.getElementById('showArchivedSurveysToggle');
         if (showArchivedToggleSurveys) {
@@ -490,7 +496,7 @@
                     const toggleAction = survey.status === 'active' ? 'deactivate' : 'reactivate';
                     const toggleIcon = survey.status === 'active' ? 'fa-toggle-off' : 'fa-toggle-on';
                     const toggleTitle = survey.status === 'active' ? 'Deactivate' : 'Reactivate';
-                    const linkBtn = survey.status === 'active' ? `<button onclick="getSurveyLink(${survey.id})" class="text-gray-500 hover:text-blue-600" title="Get Shareable Link"><i class="fas fa-link"></i></button>` : '';
+                     const linkBtn = survey.status === 'active' ? `<button onclick="openShareModal(${survey.id})" class="text-gray-500 hover:text-blue-600" title="Get Shareable Link"><i class="fas fa-link"></i></button>` : '';
 
                     actionButtons = `
                         ${viewBtn}
@@ -594,6 +600,72 @@
         const surveyUrl = `${basePath}/take-survey.php?id=${surveyId}`;
         window.prompt("Copy this link to share the survey:", surveyUrl); // Use a prompt box to show the link and make it easy to copy
     }
+
+    /**
+     * This function opens the share modal and generates the QR code.
+     * It replaces the old getSurveyLink() function.
+     * @param {number} surveyId - The ID of the survey to share.
+     */
+    function openShareModal(surveyId) {
+        const modal = document.getElementById('shareSurveyModal');
+        const linkInput = document.getElementById('shareLinkInput');
+        const qrCodeContainer = document.getElementById('qrcode');
+        
+        // 1. Construct the full survey URL.
+        const surveyUrl = `${window.location.origin}${window.location.pathname.replace('survey-management.php', '')}take-survey.php?id=${surveyId}`;
+        
+        // 2. Set the value of the input field.
+        linkInput.value = surveyUrl;
+        
+        // 3. Generate the QR Code.
+        // First, clear any old QR code.
+        qrCodeContainer.innerHTML = ''; 
+        // Create a new QRCode object.
+        qrCodeObject = new QRCode(qrCodeContainer, {
+            text: surveyUrl,
+            width: 180,
+            height: 180,
+            colorDark: "#000000",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.H
+        });
+
+        // 4. Show the modal.
+        modal.classList.remove('hidden');
+    }
+
+    /**
+     * Closes the share modal.
+     */
+    function closeShareModal() {
+        document.getElementById('shareSurveyModal').classList.add('hidden');
+    }
+
+    /**
+     * Handles copying the link to the clipboard.
+     */
+    function copyShareLink() {
+        const linkInput = document.getElementById('shareLinkInput');
+        navigator.clipboard.writeText(linkInput.value).then(() => {
+            showToastNotification("Link copied to clipboard!", "success");
+        }).catch(err => {
+            showToastNotification("Failed to copy link.", "error");
+        });
+    }
+
+    /**
+     * Handles downloading the generated QR code as a PNG file.
+     */
+    function downloadQrCode() {
+        const qrCanvas = document.querySelector('#qrcode canvas');
+        if (qrCanvas) {
+            const link = document.createElement('a');
+            link.download = `jru-pulse-survey-qr.png`;
+            link.href = qrCanvas.toDataURL("image/png");
+            link.click();
+        }
+    }
+
 
     function editSurvey(surveyId) {
         

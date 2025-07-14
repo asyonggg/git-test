@@ -62,7 +62,6 @@
 
         document.getElementById('visitorBtn').onclick = handleVisitorPath;
 
-        // --- The Simple, Direct Logic ---
         // We will wait a very short moment to give the Google script a chance to load,
         // then we will try to render the button.
         setTimeout(() => {
@@ -84,7 +83,7 @@
                 // Immediately render the button in the div we just created.
                 google.accounts.id.renderButton(
                     document.getElementById("googleSignInButton"),
-                    { theme: "outline", size: "large", width: "100%", text: "signin_with" }
+                    { theme: "outline", size: "large", width: "600", text: "signin_with" }
                 );
                 console.log("Google button rendered successfully.");
 
@@ -107,7 +106,7 @@
             console.log("  > Div found. Rendering button now!");
             google.accounts.id.renderButton(
                 googleButtonDiv,
-                { theme: "outline", size: "large", width: "380", text: "signin_with" }
+                { theme: "outline", size: "large", width: "600", text: "signin_with" }
             );
         } else {
             console.log("  > Div not found yet. Button will be rendered when the user gets to that screen.");
@@ -174,7 +173,7 @@
     async function registerAndProceed(dataToSend) {
         renderLoading("Registering your session...");
         try {
-            // This API endpoint name 'register-respondent.php' is correct.
+            // This API endpoint name 'register-respondent.php'
             const response = await fetch('api/register-respondent.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
