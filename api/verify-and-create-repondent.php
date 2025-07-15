@@ -55,10 +55,8 @@ function respond($success, $message, $data = null, $code = 200) {
                 respond(false, "This student email is not registered for surveys. Plase contact admin.",
                         null, 403);
             }
-        
         //FOr non-student, we dont need to do any special verification
-
-        $respondont_query = "INSERT INTO respondents(respondent_type, student_id, identifier_email) 
+        $respondont_query = "INSERT INTO respondents(respondent_type, student_id, identifier_email)  
                             VALUES (:type, :student_id, :email)";
         $respondent_stmt = $db->prepare($respondent_query);
 
@@ -73,8 +71,7 @@ function respond($success, $message, $data = null, $code = 200) {
         $new_respondent_id = $db->lastInserId();
 
         if ($new_respondent_id) {
-            //Success
-            respond(true, "Respondent created successfully.", ["respondent_id" => $new_respondent_id]);
+            respond(true, "Respondent created successfully.", ["respondent_id" => $new_respondent_id]); //Success
         } else {
             throw new Exception("Failed to create respondent record in the database.");
         }

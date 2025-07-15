@@ -35,47 +35,45 @@ error_log("API a/surveys.php received a request with method: " . $method);
 
 switch($method) {
       case "GET":
-        // The GET request for a specific survey MUST have an ID.
-        if (isset($_GET['id']) && is_numeric($_GET['id'])) {
-            $id = intval($_GET['id']);
-            try {
-                // This is the logic for the "take-survey" page.
-                $query = "SELECT * FROM surveys WHERE id = :id";
-                $stmt = $db->prepare($query);
-                $stmt->execute([':id' => $id]);
-                $survey = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (isset($_GET['id']) && is_numeric($_GET['id'])) { // The GET request for a specific survey MUST have an ID.
+                $id = intval($_GET['id']);
+                try {
+                    
+                    $query = "SELECT * FROM surveys WHERE id = :id"; // Logic for the "take-survey" page.
+                    $stmt = $db->prepare($query);
+                    $stmt->execute([':id' => $id]);
+                    $survey = $stmt->fetch(PDO::FETCH_ASSOC);
 
-                if ($survey) {
-                    // IMPORTANT: We now use a specific success message for a single survey.
-                    respond(true, "Single survey retrieved successfully.", $survey);
-                } else {
-                    respond(false, "Survey not found with this ID.", null, 404);
+                    if ($survey) {
+                        respond(true, "Single survey retrieved successfully.", $survey); // Use a specific success message for a single survey.
+                    } else {
+                        respond(false, "Survey not found with this ID.", null, 404);
+                    }
+                } catch (PDOException $e) {
+                    respond(false, "DB error: " . $e->getMessage(), null, 500);
                 }
-            } catch (PDOException $e) {
-                respond(false, "DB error: " . $e->getMessage(), null, 500);
-            }
-        } 
-        // This part is ONLY for the admin dashboard.
-        else if (isset($_GET['dashboard'])) {
-            try {
-                // This logic is for the admin dashboard to get lists of surveys.
-                if (isset($_GET['show_archived']) && $_GET['show_archived'] == 'true') {
-                    $query = "SELECT s.*, o.name as office_name, se.name as service_name, (SELECT COUNT(*) FROM survey_responses WHERE survey_id = s.id) as response_count FROM surveys s LEFT JOIN offices o ON s.office_id = o.id LEFT JOIN services se ON s.service_id = se.id WHERE s.status = 'archived' ORDER BY s.updated_at DESC";
-                } else {
-                    $query = "SELECT s.*, o.name as office_name, se.name as service_name, (SELECT COUNT(*) FROM survey_responses WHERE survey_id = s.id) as response_count FROM surveys s LEFT JOIN offices o ON s.office_id = o.id LEFT JOIN services se ON s.service_id = se.id WHERE s.status IN ('draft', 'active', 'inactive') ORDER BY s.created_at DESC";
+            } 
+        
+            else if (isset($_GET['dashboard'])) {  // This part is ONLY for the admin dashboard.
+                try {
+                    // This logic is for the admin dashboard to get lists of surveys.
+                    if (isset($_GET['show_archived']) && $_GET['show_archived'] == 'true') {
+                        $query = "SELECT s.*, o.name as office_name, se.name as service_name, (SELECT COUNT(*) FROM survey_responses WHERE survey_id = s.id) as response_count FROM surveys s LEFT JOIN offices o ON s.office_id = o.id LEFT JOIN services se ON s.service_id = se.id WHERE s.status = 'archived' ORDER BY s.updated_at DESC";
+                    } else {
+                        $query = "SELECT s.*, o.name as office_name, se.name as service_name, (SELECT COUNT(*) FROM survey_responses WHERE survey_id = s.id) as response_count FROM surveys s LEFT JOIN offices o ON s.office_id = o.id LEFT JOIN services se ON s.service_id = se.id WHERE s.status IN ('draft', 'active', 'inactive') ORDER BY s.created_at DESC";
+                    }
+                    $stmt = $db->prepare($query);
+                    $stmt->execute();
+                    respond(true, "Survey list retrieved successfully.", $stmt->fetchAll(PDO::FETCH_ASSOC));
+                } catch (PDOException $e) {
+                    respond(false, "DB error: " . $e->getMessage(), null, 500);
                 }
-                $stmt = $db->prepare($query);
-                $stmt->execute();
-                respond(true, "Survey list retrieved successfully.", $stmt->fetchAll(PDO::FETCH_ASSOC));
-            } catch (PDOException $e) {
-                respond(false, "DB error: " . $e->getMessage(), null, 500);
             }
-        }
-        // If neither of the above conditions are met, it's a bad request.
-        else {
-            respond(false, "A valid Survey ID is required for this page.", null, 400);
-        }
-        break;
+            // If neither of the above conditions are met, it's a bad request.
+            else {
+                respond(false, "A valid Survey ID is required for this page.", null, 400);
+            }
+    break;
 
    case "POST": // It correctly sets the status to 'active' if the action is 'publish'.
         $data = json_decode(file_get_contents("php://input"), true);
@@ -103,7 +101,7 @@ switch($method) {
             respond(true, $message, ["new_id" => $db->lastInsertId()], 201);
             
         } catch (PDOException $e) { respond(false, "DB error on create: " . $e->getMessage(), null, 500); }
-        break;
+    break;
     
     case "PUT": //the main router for any "update" action. he first thing to do is get the survey's ID from the URL and the 'action' command from the JSON data sent by the JavaScript. If either is missing, we can't do anything, so we stop early.
         if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
@@ -185,11 +183,9 @@ switch($method) {
         } catch (PDOException $e) {
             respond(false, "Database error: " . $e->getMessage(), null, 500);
         }
-        break;
-
-
-   case "DELETE":
+    break;
     
+   case "DELETE":
     // This action should be handled by a different, dedicated API endpoint like `api/permanent-delete-survey.php`
     respond(false, "Permanent deletion is not supported by this endpoint. Use archive instead.", 403);
     break;

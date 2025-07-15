@@ -18,28 +18,24 @@ try {
     respond(false, "DB Connection Failed", null, 500);
 }
 
-// This script only handles DELETE requests
-if ($_SERVER["REQUEST_METHOD"] == 'DELETE') {
+if ($_SERVER["REQUEST_METHOD"] == 'DELETE') { //// This script only handles DELETE requests
     if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
         respond(false, "A valid Survey ID is required for deletion.", null, 400);
     }
     $id = intval($_GET['id']);
 
-    // Use a transaction for safety
-    $db->beginTransaction();
+    $db->beginTransaction(); /// Use a transaction for safety
     try {
-        // Step 1: Delete all responses associated with this survey.
-        $stmt_responses = $db->prepare("DELETE FROM survey_responses WHERE survey_id = :survey_id");
+        
+        $stmt_responses = $db->prepare("DELETE FROM survey_responses WHERE survey_id = :survey_id"); // Delete all responses associated with this survey.
         $stmt_responses->bindValue(':survey_id', $id);
         $stmt_responses->execute();
 
-        // Step 2: Delete the survey itself.
-        $stmt_survey = $db->prepare("DELETE FROM surveys WHERE id = :id");
+        $stmt_survey = $db->prepare("DELETE FROM surveys WHERE id = :id"); //Delete the survey itself.
         $stmt_survey->bindValue(':id', $id);
         $stmt_survey->execute();
 
-        // If both queries succeed, commit the transaction.
-        $db->commit();
+        $db->commit(); // If both queries succeed, commit the transaction.
         respond(true, "Survey and all its responses have been permanently deleted.");
 
     } catch (PDOException $e) {

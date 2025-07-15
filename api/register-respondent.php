@@ -36,8 +36,7 @@ try {
     $email_for_non_student = null;
 
     if ($type === 'student') {
-        // This is where we verify the student against the master list.
-        $stmt = $db->prepare("SELECT id FROM students WHERE email = :email");
+        $stmt = $db->prepare("SELECT id FROM students WHERE email = :email"); // verify the student against the master list.
         $stmt->execute([':email' => $identifier_email]);
         $student_record = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -47,12 +46,10 @@ try {
             respond(false, "This student email is not registered. Please contact an administrator.", null, 403);
         }
     } else {
-        // This is the non-student path. We just save their email.
-        $email_for_non_student = $identifier_email;
+        $email_for_non_student = $identifier_email; // This is the non-student path. Just save their email.
     }
 
-    // Now, create the official Respondent record.
-    $respondent_query = "INSERT INTO respondents (respondent_type, student_id, identifier_email) VALUES (:type, :student_id, :email)";
+    $respondent_query = "INSERT INTO respondents (respondent_type, student_id, identifier_email) VALUES (:type, :student_id, :email)"; // Now, create the official Respondent record.
     $respondent_stmt = $db->prepare($respondent_query);
     $respondent_stmt->execute([
         ':type' => $type,

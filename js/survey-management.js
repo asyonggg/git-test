@@ -49,19 +49,19 @@
         
     sidebarToggle.addEventListener('click', toggleSidebar);  // Add the existing sidebar toggle event listener
         
-        let offices = []; //office global array
-        let services = []; //services global array
-        let isShowingArchivedOffices = false;
-        let isShowingArchivedServices = false;
-        let surveys = [];
-        let isShowingArchivedSurveys = false;
-        let currentTab = 'surveys';
+    let offices = []; //office global array
+    let services = []; //services global array
+    let isShowingArchivedOffices = false;
+    let isShowingArchivedServices = false;
+    let surveys = [];
+    let isShowingArchivedSurveys = false;
+    let currentTab = 'surveys';
 
         
-        document.addEventListener('DOMContentLoaded', function() {
-            initializeApp();
-            setupEventListeners();
-        });
+    document.addEventListener('DOMContentLoaded', function() { //Load the page contents
+        initializeApp();
+        setupEventListeners();
+    });
 
     async function initializeApp() {
         setupEventListeners();
@@ -119,27 +119,27 @@
             });
         }
 
-        const searchInput = document.getElementById('searchInput');
+        const searchInput = document.getElementById('searchInput'); //
         if (searchInput) {
             searchInput.addEventListener('input', () => renderSurveys());
         }
     }
 
     function openCreateSurveyModal() {
-        document.getElementById('createSurveyModal').classList.remove('hidden'); // Modal Management
+        document.getElementById('createSurveyModal').classList.remove('hidden'); // Modal Management - Open the Survey Creation Modal
     }
 
     function closeCreateSurveyModal() {
-        document.getElementById('createSurveyModal').classList.add('hidden');
+        document.getElementById('createSurveyModal').classList.add('hidden'); //Close survey creation Modal
         document.getElementById('createSurveyForm').reset();
     }
 
     function openAddOfficeModal() {
-        document.getElementById('addOfficeModal').classList.remove('hidden');
+        document.getElementById('addOfficeModal').classList.remove('hidden'); // Open Office Modal
     }
 
     function closeAddOfficeModal() {
-        document.getElementById('addOfficeModal').classList.add('hidden');
+        document.getElementById('addOfficeModal').classList.add('hidden'); //Close Office Modal
         document.getElementById('addOfficeForm').reset();
     }
 
@@ -212,8 +212,8 @@
         }
     }
 
-    async function loadOffices() {
-        console.log(`Loading offices... (Archived view: ${isShowingArchivedOffices})`); // Data Loading Functions
+    async function loadOffices() {  // Office Data Loading Functions
+        console.log(`Loading offices... (Archived view: ${isShowingArchivedOffices})`);
         
         let apiUrl;
 
@@ -272,7 +272,7 @@
     }
 
 
-    async function loadServices() {
+    async function loadServices() { //Services Data Loading Function
         const officeId = document.getElementById('officeFilter').value;
         
         console.log(`Loading services... (Archived: ${isShowingArchivedServices}, Office ID: ${officeId})`);
@@ -296,7 +296,7 @@
                     'Content-Type': 'application/json',
                 },
                 cache: 'no-cache'
-            }); // ---: Fetch data and handle UI updates (inside try/catch)
+            }); // ---: Fetch data and handle UI updates with try catch
 
             console.log('Service Response status:', response.status);
 
@@ -337,14 +337,14 @@
 
     async function loadSurveys() {
         
-        console.log(`Attempting to load surveys... (Archived view: ${isShowingArchivedSurveys})`);  // We now use the global state variable to log the current mode.
+        console.log(`Attempting to load surveys... (Archived view: ${isShowingArchivedSurveys})`);  //Now use the global state variable to log the current mode.
         
         const apiUrl = isShowingArchivedSurveys 
         ? 'api/surveys.php?show_archived=true&dashboard=true' 
-        : 'api/surveys.php?dashboard=true'; // We build the API URL dynamically based on the toggle's state.
+        : 'api/surveys.php?dashboard=true'; // Build the API URL dynamically based on the toggle's state.
 
         try {
-            const response = await fetch(apiUrl);  // We use the new 'apiUrl' variable in the fetch call.
+            const response = await fetch(apiUrl);  //Use the new 'apiUrl' variable in the fetch call.
 
             if (!response.ok) {
                 throw new Error(`HTTP error! Status: ${response.status}`);
@@ -378,9 +378,8 @@
         let confirmOptions = {};
         
         switch (action) {
-            // --- ADD THIS CASE ---
             case 'duplicate':
-                duplicateSurvey(id); // Call our new function.
+                duplicateSurvey(id); // Call the duplicate function (for now we deactivated the duplicate feature)
                 return; // Stop here.
             
             case 'archive':
@@ -438,7 +437,7 @@
         }
     }
 
-    function getStatusClass(status) {
+    function getStatusClass(status) { //Define the status themes
         const classes = {
             'draft': 'bg-yellow-100 text-yellow-800',
             'active': 'bg-green-100 text-green-800',
@@ -449,7 +448,7 @@
     }
 
 
-    function renderSurveys() {
+    function renderSurveys() {  //Generate the surveys overview details
         const tbody = document.getElementById('surveysTableBody');
         const searchInput = document.getElementById('searchInput');
         const query = searchInput ? searchInput.value.toLowerCase() : '';
@@ -477,9 +476,8 @@
         tbody.innerHTML = filteredSurveys.map(survey => {
             let actionButtons = '';
             
-            // This button creates a copy of a survey. It's useful for locked or archived surveys.
+            // This button creates a copy of a survey. 
             const duplicateBtn = `<button data-action="duplicate" data-id="${survey.id}" class="text-gray-500 hover:text-green-600" title="Duplicate Survey"><i class="fas fa-copy"></i></button>`;
-
             const viewBtn = `<a href="survey-details.php?id=${survey.id}" class="text-gray-500 hover:text-jru-blue" title="View Details & Results"><i class="fas fa-chart-bar"></i></a>`;
             const editBtn = `<a href="survey-builder.php?survey_id=${survey.id}" class="text-gray-500 hover:text-jru-blue" title="Edit & Build Survey"><i class="fas fa-edit"></i></a>`;
             const archiveBtn = `<button data-action="archive" data-id="${survey.id}" class="text-gray-500 hover:text-orange-600" title="Archive Survey"><i class="fas fa-archive"></i></button>`;
@@ -561,7 +559,7 @@
             showToastNotification('Survey duplicated! Taking you to the editor...', 'success');  // Redirect the user to the survey builder for the new copy.
             setTimeout(() => {
                 window.location.href = `survey-builder.php?survey_id=${newSurveyId}`;
-            }, 1500); // Wait 1.5 seconds for the user to read the toast.
+            }, 2000); // Wait 2 seconds for the user to read the toast.
 
         } catch (error) {
             if (error && error.message) {
@@ -602,8 +600,7 @@
     }
 
     /**
-     * This function opens the share modal and generates the QR code.
-     * It replaces the old getSurveyLink() function.
+     * This function opens the share modal and generates the QR code. It replaces the old getSurveyLink() function.
      * @param {number} surveyId - The ID of the survey to share.
      */
     function openShareModal(surveyId) {
@@ -611,17 +608,13 @@
         const linkInput = document.getElementById('shareLinkInput');
         const qrCodeContainer = document.getElementById('qrcode');
         
-        // 1. Construct the full survey URL.
-        const surveyUrl = `${window.location.origin}${window.location.pathname.replace('survey-management.php', '')}take-survey.php?id=${surveyId}`;
+        const surveyUrl = `${window.location.origin}${window.location.pathname.replace('survey-management.php', '')}take-survey.php?id=${surveyId}`; // 1. Construct the full survey URL.
         
-        // 2. Set the value of the input field.
-        linkInput.value = surveyUrl;
+        linkInput.value = surveyUrl;  // 2. Set the value of the input field.
         
-        // 3. Generate the QR Code.
-        // First, clear any old QR code.
-        qrCodeContainer.innerHTML = ''; 
-        // Create a new QRCode object.
-        qrCodeObject = new QRCode(qrCodeContainer, {
+        qrCodeContainer.innerHTML = '';  // 3. Generate the QR Code. First, clear any old QR code.
+       
+        qrCodeObject = new QRCode(qrCodeContainer, {  // Create a new QRCode object.
             text: surveyUrl,
             width: 180,
             height: 180,
@@ -630,21 +623,14 @@
             correctLevel: QRCode.CorrectLevel.H
         });
 
-        // 4. Show the modal.
-        modal.classList.remove('hidden');
+        modal.classList.remove('hidden'); // 4. Show the modal.
     }
 
-    /**
-     * Closes the share modal.
-     */
     function closeShareModal() {
         document.getElementById('shareSurveyModal').classList.add('hidden');
     }
 
-    /**
-     * Handles copying the link to the clipboard.
-     */
-    function copyShareLink() {
+    function copyShareLink() { //Handles copying the link to the clipboard.
         const linkInput = document.getElementById('shareLinkInput');
         navigator.clipboard.writeText(linkInput.value).then(() => {
             showToastNotification("Link copied to clipboard!", "success");
@@ -652,11 +638,8 @@
             showToastNotification("Failed to copy link.", "error");
         });
     }
-
-    /**
-     * Handles downloading the generated QR code as a PNG file.
-     */
-    function downloadQrCode() {
+ 
+    function downloadQrCode() { //handles downloading the generated QR code as a PNG file.
         const qrCanvas = document.querySelector('#qrcode canvas');
         if (qrCanvas) {
             const link = document.createElement('a');
@@ -672,7 +655,7 @@
         console.log(`Preparing to edit survey. Redirecting with ID: ${surveyId}`);
         const url = `survey-builder.php?survey_id=${surveyId}`; // Build the URL. The parameter name MUST BE 'survey_id'.  The query string MUST START with a '?'.
 
-        window.location.href = url; // 3. Redirect the user.
+        window.location.href = url; // Redirect the user.
     }
 
     function renderOffices() {
@@ -684,15 +667,15 @@
 
         container.innerHTML = offices.map(office => {
            
-            const buttons = isShowingArchivedOffices  // --- DYNAMIC BUTTON LOGIC ---
-                ? `<!-- Archived View Buttons -->
+            const buttons = isShowingArchivedOffices  //  DYNAMIC BUTTON LOGIC 
+                ? `<!-- for Archived View Buttons -->
                 <button onclick="reactivateOffice(${office.id})" class="text-gray-400 hover:text-green-600" title="Reactivate Office">
                     <i class="fas fa-undo-alt"></i>
                 </button>
                 <button onclick="permanentlyDeleteOffice(${office.id})" class="text-gray-400 hover:text-red-600" title="Permanently Delete">
                     <i class="fas fa-trash-alt"></i>
                 </button>`
-                : `<!-- Active View Buttons -->
+                : `<!-- for Active View Buttons -->
                 <button onclick="openOfficeEditModal(${office.id})" class="text-blue-600 hover:text-blue-800" title="Edit Office">
                     <i class="fas fa-edit"></i>
                 </button>
@@ -721,7 +704,7 @@
             }
 
             container.innerHTML = services.map(service => {
-                const buttons = isShowingArchivedServices // --- DYNAMIC BUTTON LOGIC ---
+                const buttons = isShowingArchivedServices // Dynamic Buttons Logic
                     ? `<!-- Archived View Buttons -->
                     <button onclick="reactivateService(${service.id})" class="text-gray-400 hover:text-green-600" title="Reactivate Service">
                         <i class="fas fa-undo-alt"></i>
@@ -778,13 +761,13 @@
 
         async function permanentlyDeleteOffice(officeId) {
             try {
-                await showConfirmationModal({
+                await showConfirmationModal({ //Modal message for Office perma deletion
                     title: 'PERMANENTLY DELETE OFFICE',
                     message: 'WARNING: This action is irreversible and cannot be undone. This will only succeed if the office has no services linked to it.',
                     actionText: 'Delete Forever'
                 });
 
-                const response = await fetch(`api/permanent-delete-office.php?id=${officeId}`, { // The user confirmed. Now call our NEW, dedicated API endpoint.
+                const response = await fetch(`api/permanent-delete-office.php?id=${officeId}`, { // The user confirmed. Now call the API permanent delete
                     method: 'DELETE'
                 });
                 
@@ -806,14 +789,14 @@
 
         async function reactivateService(serviceId) {
             try {
-                await showConfirmationModal({
+                await showConfirmationModal({ //Show the modal message
                     title: 'Reactivate Service',
                     message: 'This will make the service available again for new surveys.',
                     actionText: 'Yes, Reactivate',
                     style: 'info'
                 });
 
-                const response = await fetch(`api/services.php?id=${serviceId}`, {
+                const response = await fetch(`api/services.php?id=${serviceId}`, { //If confirmed. Call the API UPDATE api/services
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ action: 'reactivate' })
@@ -1170,33 +1153,31 @@
         }
 
      function handleOfficeChange() {
-    // Get the IDs of the dropdowns inside the "Create Survey" modal
-    const officeId = document.getElementById('newSurveyOffice').value;
-    const serviceSelect = document.getElementById('newSurveyService');
-    
-    serviceSelect.innerHTML = '<option value="">Select Service</option>';
-    
-    if (!officeId) {
-        serviceSelect.disabled = true;
-        return;
-    }
+        const officeId = document.getElementById('newSurveyOffice').value; // Get the IDs of the dropdowns inside the "Create Survey" modal
+        const serviceSelect = document.getElementById('newSurveyService');
+        
+        serviceSelect.innerHTML = '<option value="">Select Service</option>';
+        
+        if (!officeId) {
+            serviceSelect.disabled = true;
+            return;
+        }
 
-    // Filter the global 'services' array based on the selected office
-    const relevantServices = services.filter(s => s.office_id == officeId);
-    
-    if (relevantServices.length > 0) {
-        relevantServices.forEach(service => {
-            const option = document.createElement('option');
-            option.value = service.id;
-            option.textContent = service.name;
-            serviceSelect.appendChild(option);
-        });
-        serviceSelect.disabled = false; // Enable the dropdown
-    } else {
-        serviceSelect.innerHTML = '<option value="">No services for this office</option>';
-        serviceSelect.disabled = true; // Keep it disabled
+        const relevantServices = services.filter(s => s.office_id == officeId); // Filter the global 'services' array based on the selected office
+        
+        if (relevantServices.length > 0) {
+            relevantServices.forEach(service => {
+                const option = document.createElement('option');
+                option.value = service.id;
+                option.textContent = service.name;
+                serviceSelect.appendChild(option);
+            });
+            serviceSelect.disabled = false; // Enable the dropdown
+        } else {
+            serviceSelect.innerHTML = '<option value="">No services for this office</option>';
+            serviceSelect.disabled = true; // Keep it disabled
+        }
     }
-}
 
         function filterServices() {
             renderServices();

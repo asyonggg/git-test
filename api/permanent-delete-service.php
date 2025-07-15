@@ -26,7 +26,7 @@ if ($_SERVER["REQUEST_METHOD"] == "DELETE") {
     $id = intval($_GET['id']);
 
     try {
-        $query = "DELETE FROM services WHERE id = :id";
+        $query = "DELETE FROM services WHERE id = :id"; //SQL COMMAND FOR PERMANENT DELITION
         $stmt = $db->prepare($query);
         $stmt->bindValue(':id', $id);
         $stmt->execute();
@@ -37,9 +37,8 @@ if ($_SERVER["REQUEST_METHOD"] == "DELETE") {
             respond(false, "Service not found. It may have already been deleted.", null, 404);
         }
 
-    } catch (PDOException $e) {
-        // Catch the foreign key constraint violation error
-        if ($e->getCode() == '23000') {
+    } catch (PDOException $e) { 
+        if ($e->getCode() == '23000') {  // Catch the foreign key constraint violation error
             respond(false, "Cannot delete this service because surveys are still linked to it.", null, 409);
         }
         respond(false, "Database error: " . $e->getMessage(), null, 500);

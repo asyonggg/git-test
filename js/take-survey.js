@@ -1,4 +1,3 @@
-    // --- Global State Object ---
     // Holds all information for the user's entire session.
     const surveyState = {
         surveyId: null,
@@ -8,8 +7,7 @@
         currentQuestionIndex: 0,
     };
 
-    // The main HTML container where we render all our content.
-    const surveyContainer = document.getElementById('surveyContainer');
+    const surveyContainer = document.getElementById('surveyContainer'); // The main HTML container where we render all our content.
     let isGoogleReady = false;
 
     window.onGoogleScriptLoad = function() {
@@ -62,26 +60,21 @@
 
         document.getElementById('visitorBtn').onclick = handleVisitorPath;
 
-        // We will wait a very short moment to give the Google script a chance to load,
-        // then we will try to render the button.
+        // We will wait a very short moment to give the Google script a chance to load, then we will try to render the button.
         setTimeout(() => {
             try {
-                // Check if the 'google' object is available.
-                if (typeof google === 'undefined' || !google.accounts) {
-                    // If not, throw an error to be caught below.
-                    throw new Error("Google library not yet loaded.");
+                if (typeof google === 'undefined' || !google.accounts) { // Check if the 'google' object is available.
+                    throw new Error("Google library not yet loaded."); // If not, throw an error to be caught below.
                 }
 
                 console.log("Attempting to initialize and render Google button...");
                 
-                // Initialize the library.
-                google.accounts.id.initialize({
+                google.accounts.id.initialize({ // Initialize the library.
                     client_id: "913799866499-p05hvm7muoaiqogtp85d0s95jiuavfuv.apps.googleusercontent.com",
                     callback: handleGoogleSignIn // Use the new, correct handler name
                 });
 
-                // Immediately render the button in the div we just created.
-                google.accounts.id.renderButton(
+                google.accounts.id.renderButton( // Immediately render the button in the div we just created.
                     document.getElementById("googleSignInButton"),
                     { theme: "outline", size: "large", width: "600", text: "signin_with" }
                 );
@@ -89,21 +82,19 @@
 
             } catch (error) {
                 console.error("Could not render Google button:", error);
-                // Display a helpful error message to the user inside the button's div.
-                const googleButtonDiv = document.getElementById("googleSignInButton");
+                const googleButtonDiv = document.getElementById("googleSignInButton"); // Display a helpful error message to the user inside the button's div.
                 if(googleButtonDiv) {
                 googleButtonDiv.innerHTML = "<p class='text-center text-red-500 p-3 bg-red-50 rounded-lg'>Could not load Google Sign-In. Please check your internet connection and refresh the page.</p>";
                 }
             }
-        }, 500); // Wait 200 milliseconds before trying.
+        }, 500); // Wait 500 milliseconds before trying.
     }
 
     function renderGoogleButton() {
         const googleButtonDiv = document.getElementById("googleSignInButton");
         
-        // A safety check: if we are not on the role selection screen, the div won't exist.
-        if (googleButtonDiv) {
-            console.log("  > Div found. Rendering button now!");
+        if (googleButtonDiv) { // A safety check: if we are not on the role selection screen, the div won't exist.
+            console.log("  > Div found. Rendering button now!"); //for debugging
             google.accounts.id.renderButton(
                 googleButtonDiv,
                 { theme: "outline", size: "large", width: "600", text: "signin_with" }
@@ -132,8 +123,6 @@
         };
         registerAndProceed(dataToSend);
     }
-
-
 
     function handleVisitorPath() {
         surveyContainer.innerHTML = `
@@ -202,8 +191,7 @@
         }
     }
 
-    // --- Helper Functions (including custom JWT parser) ---
-    function parseJWT(token) {
+    function parseJWT(token) {  // --- Helper Functions (including custom JWT parser) ---
         try {
             const base64Url = token.split('.')[1];
             const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
@@ -228,11 +216,9 @@
 
 
     async function fetchAndPrepareSurvey() {
-        // Get the ID from our global state object. This is our single source of truth.
-        const id = surveyState.surveyId;
+        const id = surveyState.surveyId; // Get the ID from our global state object. This is our single source of truth.
 
-        // A safety check to make sure the ID actually exists before we make an API call.
-        if (!id) {
+        if (!id) { // A safety check to make sure the ID actually exists before we make an API call.
             renderError("Cannot load survey because the ID is missing.");
             return;
         }
@@ -241,8 +227,7 @@
         renderLoading("Loading Survey...");
 
         try {
-            // Use the local 'id' variable in the fetch call.
-            const response = await fetch(`api/surveys.php?id=${id}`);
+            const response = await fetch(`api/surveys.php?id=${id}`);  // Use the local 'id' variable in the fetch call.
             const result = await response.json();
 
             if (result.success && result.data.questions_json) {
@@ -263,7 +248,6 @@
             renderError("Could not load the survey. It may not exist or there was a network error.");
         }
     }
-
 
     function renderQuestionStage() {
         const questions = surveyState.surveyData.questions;
@@ -292,82 +276,79 @@
         setupQuestionInteractivity();
     }
 
-    function handleBack() {
-        if (surveyState.currentQuestionIndex > 0) {
-            surveyState.currentQuestionIndex--;
-            renderQuestionStage();
-        }
-    }
-
-    function handleNext() {
-        const currentQuestion = surveyState.surveyData.questions[surveyState.currentQuestionIndex];
-        const inputName = `q_${currentQuestion.id}`;
-        const inputWrapper = document.getElementById('question-input-wrapper');
-        let inputValue = null;
-        const inputElement = inputWrapper.querySelector(`[name="${inputName}"]`);
-        if (inputElement) {
-            if (inputElement.type === 'radio') {
-                const checkedRadio = inputWrapper.querySelector(`[name="${inputName}"]:checked`);
-                if (checkedRadio) inputValue = checkedRadio.value;
-            } else {
-                inputValue = inputElement.value;
+        function handleBack() {
+            if (surveyState.currentQuestionIndex > 0) {
+                surveyState.currentQuestionIndex--;
+                renderQuestionStage();
             }
         }
-        const warningSpot = document.getElementById('warning-spot');
-        if (currentQuestion.required && (!inputValue || inputValue.trim() === '')) {
-            warningSpot.innerHTML = `<div class="text-red-600 font-semibold text-sm p-3 bg-red-50 rounded-lg"><i class="fas fa-exclamation-circle mr-2"></i>This question is required.</div>`;
-            setTimeout(() => { warningSpot.innerHTML = ''; }, 3000);
-            return;
-        }
-        warningSpot.innerHTML = '';
-        surveyState.answers[inputName] = inputValue;
-        if (surveyState.currentQuestionIndex < surveyState.surveyData.questions.length - 1) {
-            surveyState.currentQuestionIndex++;
-            renderQuestionStage();
-        } else {
-            submitSurveyResponse();
-        }
-    }
 
-    async function submitSurveyResponse() {
-        renderLoading("Submitting your feedback...");
-        const finalAnswers = Object.entries(surveyState.answers).map(([key, value]) => {
-            const qId = key.split('_')[1];
-            const question = surveyState.surveyData.questions.find(q => q.id == qId);
-            return { question_id: qId, text: question ? question.text : 'Unknown', answer: value };
-        });
-        const finalSubmissionData = { survey_id: surveyState.surveyId, respondent: surveyState.respondent, answers: finalAnswers };
-        try {
-            const response = await fetch('api/submit-response.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(finalSubmissionData)
+        function handleNext() {
+            const currentQuestion = surveyState.surveyData.questions[surveyState.currentQuestionIndex];
+            const inputName = `q_${currentQuestion.id}`;
+            const inputWrapper = document.getElementById('question-input-wrapper');
+            let inputValue = null;
+            const inputElement = inputWrapper.querySelector(`[name="${inputName}"]`);
+            if (inputElement) {
+                if (inputElement.type === 'radio') {
+                    const checkedRadio = inputWrapper.querySelector(`[name="${inputName}"]:checked`);
+                    if (checkedRadio) inputValue = checkedRadio.value;
+                } else {
+                    inputValue = inputElement.value;
+                }
+            }
+            const warningSpot = document.getElementById('warning-spot');
+            if (currentQuestion.required && (!inputValue || inputValue.trim() === '')) {
+                warningSpot.innerHTML = `<div class="text-red-600 font-semibold text-sm p-3 bg-red-50 rounded-lg"><i class="fas fa-exclamation-circle mr-2"></i>This question is required.</div>`;
+                setTimeout(() => { warningSpot.innerHTML = ''; }, 3000);
+                return;
+            }
+            warningSpot.innerHTML = '';
+            surveyState.answers[inputName] = inputValue;
+            if (surveyState.currentQuestionIndex < surveyState.surveyData.questions.length - 1) {
+                surveyState.currentQuestionIndex++;
+                renderQuestionStage();
+            } else {
+                submitSurveyResponse();
+            }
+        }
+
+        async function submitSurveyResponse() {
+            renderLoading("Submitting your feedback...");
+            const finalAnswers = Object.entries(surveyState.answers).map(([key, value]) => {
+                const qId = key.split('_')[1];
+                const question = surveyState.surveyData.questions.find(q => q.id == qId);
+                return { question_id: qId, text: question ? question.text : 'Unknown', answer: value };
             });
-            const result = await response.json();
-            if (result.success) {
-                surveyContainer.innerHTML = `<div class="text-center py-8">
-                <i class="fas fa-check-circle text-green-500 text-5xl mb-4"></i>
-                <h1 class="text-2xl font-bold text-gray-900">${result.message}</h1>
-                <p class="text-gray-600 mt-2">Thank you for helping us improve!</p></div>`;
-            } else {
-                renderError(result.message);
+            const finalSubmissionData = { survey_id: surveyState.surveyId, respondent: surveyState.respondent, answers: finalAnswers };
+            try {
+                const response = await fetch('api/submit-response.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(finalSubmissionData)
+                });
+                const result = await response.json();
+                if (result.success) {
+                    surveyContainer.innerHTML = `<div class="text-center py-8">
+                    <i class="fas fa-check-circle text-green-500 text-5xl mb-4"></i>
+                    <h1 class="text-2xl font-bold text-gray-900">${result.message}</h1>
+                    <p class="text-gray-600 mt-2">Thank you for helping us improve!</p></div>`;
+                } else {
+                    renderError(result.message);
+                }
+            } catch (error) {
+                renderError("A network error occurred while submitting your feedback.");
             }
-        } catch (error) {
-            renderError("A network error occurred while submitting your feedback.");
         }
-    }
 
    function renderInputForQuestion(question) { // --- UTILITY & HELPER FUNCTIONS ---
         const name = `q_${question.id}`;
         const savedAnswer = surveyState.answers[name] || '';
 
-        // We will use a simple DIV as a wrapper for the inputs.
-        // We give it a unique ID so we can easily find it later.
-        let content = `<div id="question-input-wrapper">`; 
+        let content = `<div id="question-input-wrapper">`;   // We will use a simple DIV as a wrapper for the inputs. give it a unique ID so we can easily find it later.
 
         switch (question.type) {
-            // ... (The 'case' blocks for likert, rating, textarea remain THE SAME) ...
-        case 'likert': // Emoji Scale
+        case 'likert': // Emoji Scale  
         const emojis = [
             { emoji: '😍', value: 5, label: 'Excellent' },
             { emoji: '😊', value: 4, label: 'Very Good' },
@@ -413,27 +394,22 @@
             default:
                 content += `<p class="text-red-500 italic">This question type is not supported.</p>`;
         }
-        
-        // Close the DIV tag instead of the FORM tag.
-        content += '</div>';
+        content += '</div>'; // Close the DIV tag instead of the FORM tag.
         return content;
     }
 
      function setupQuestionInteractivity() {
-        // Emoji Hover Interactivity
-        document.querySelectorAll('.emoji-label').forEach(label => {
+        document.querySelectorAll('.emoji-label').forEach(label => {  // Emoji Hover Interactivity
             const textPopup = label.querySelector('.emoji-text-popup');
             
-            // When the mouse enters the label area
-            label.addEventListener('mouseenter', () => {
+            label.addEventListener('mouseenter', () => {  // When the mouse enters/hover the label area
                 label.style.transform = 'scale(1.15)'; // Enlarge the whole label
                 if (textPopup) {
                     textPopup.style.opacity = '1'; // Make text visible
                 }
             });
 
-            // When the mouse leaves the label area
-            label.addEventListener('mouseleave', () => {
+            label.addEventListener('mouseleave', () => {   // When the mouse leaves the label area
                 label.style.transform = 'scale(1)'; // Return to normal size
                 if (textPopup) {
                     textPopup.style.opacity = '0'; // Make text invisible
@@ -441,8 +417,7 @@
             });
         });
         
-        // Re-check selected radio button for emojis
-        document.querySelectorAll('.emoji-label input[type="radio"]').forEach(radio => {
+        document.querySelectorAll('.emoji-label input[type="radio"]').forEach(radio => { // Re-check selected radio button for emojis
             radio.addEventListener('change', () => {
                 // Un-style all siblings
                 radio.closest('.flex').querySelectorAll('.emoji-label .w-4').forEach(div => div.classList.remove('bg-jru-blue', 'border-jru-blue'));
