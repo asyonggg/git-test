@@ -19,7 +19,7 @@
             }
         }
     </script>
-    <link rel="stylesheet" href="css/style.css"> <!-- Assuming you have a shared CSS file -->
+    <link rel="stylesheet" href="css/styles.css">
 </head>
 <body class="bg-gray-50 font-sans">
     <div class="flex h-screen overflow-hidden">

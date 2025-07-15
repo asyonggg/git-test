@@ -87,7 +87,7 @@
                 googleButtonDiv.innerHTML = "<p class='text-center text-red-500 p-3 bg-red-50 rounded-lg'>Could not load Google Sign-In. Please check your internet connection and refresh the page.</p>";
                 }
             }
-        }, 500); // Wait 500 milliseconds before trying.
+        }, 500); // Wait .5 sec before trying
     }
 
     function renderGoogleButton() {
@@ -124,7 +124,7 @@
         registerAndProceed(dataToSend);
     }
 
-    function handleVisitorPath() {
+    function handleVisitorPath() { //function for non-students
         surveyContainer.innerHTML = `
             <h1 class="text-2xl font-bold text-gray-900 mb-4">Please Provide Your Information</h1>
             <p class="text-sm text-gray-600 mb-4">Your name and email are required to proceed.</p>
@@ -162,8 +162,7 @@
     async function registerAndProceed(dataToSend) {
         renderLoading("Registering your session...");
         try {
-            // This API endpoint name 'register-respondent.php'
-            const response = await fetch('api/register-respondent.php', {
+            const response = await fetch('api/register-respondent.php', { //API endpoint name for VIsitor
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(dataToSend)
@@ -172,7 +171,6 @@
             if (result.success) {
                 surveyState.respondent = dataToSend;
                 surveyState.respondent.id = result.data.respondent_id;
-                
                 // Show a brief, personalized welcome message
                 surveyContainer.innerHTML = `
                     <div class="text-center py-8">
@@ -181,7 +179,7 @@
                         <p class="text-gray-600 mt-2">Welcome, ${dataToSend.first_name}!</p>
                     </div>
                 `;
-                setTimeout(() => fetchAndPrepareSurvey(), 2500); // Wait 1.5s before starting the survey
+                setTimeout(() => fetchAndPrepareSurvey(), 2000); // Wait 2s before starting the survey
                 
             } else {
                 renderError(result.message);

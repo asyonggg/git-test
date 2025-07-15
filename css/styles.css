@@ -1,0 +1,60 @@
+/* Sidebar */
+    .sidebar-transition {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .chart-container {
+        position: relative;
+        height: 220px;
+        width: 100%;
+    }
+
+    @media (max-width: 768px) {
+        .chart-container {
+            height: 180px;
+        }
+    }
+
+    .sidebar-collapsed {
+        width: 5rem;
+    }
+
+    .sidebar-expanded {
+        width: 16rem;
+    }
+
+    .menu-text {
+        transition: opacity 0.2s ease-in-out;
+    }
+
+    .logo-transition {
+        transition: all 0.3s ease;
+    }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 3px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: #a1a1a1;
+    }
+
+/* Take survey */
+    .emoji-label.is-pressing {
+        transform: scale(1.25);
+        transition: transform 0.1s ease-in;
+    }
+    .emoji-label.is-pressing .number-popup { /* Make the number pop-up visible and move it slightly when pressed */
+        opacity: 1;
+        transform: translateY(-5px);
+    }

@@ -6,6 +6,7 @@
     <title>Survey Management - JRU-A-PULSE</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
     <script>
         tailwind.config = {
             theme: {
@@ -19,60 +20,6 @@
             }
         }
     </script>
-   
-     <style>
-        /* Sidebar */
-        .sidebar-transition {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .chart-container {
-            position: relative;
-            height: 220px;
-            width: 100%;
-        }
-
-        @media (max-width: 768px) {
-            .chart-container {
-                height: 180px;
-            }
-        }
-
-        .sidebar-collapsed {
-            width: 5rem;
-        }
-
-        .sidebar-expanded {
-            width: 16rem;
-        }
-
-        .menu-text {
-            transition: opacity 0.2s ease-in-out;
-        }
-
-        .logo-transition {
-            transition: all 0.3s ease;
-        }
-
-        /* Custom scrollbar */
-        ::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: #f1f1f1;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: #c1c1c1;
-            border-radius: 3px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: #a1a1a1;
-        }
-
-    </style>
 </head>
 <body class="bg-gray-50 font-sans">
     <div class="flex h-screen overflow-hidden">

@@ -6,6 +6,7 @@
     <title>JRU Pulse Survey</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
     <script>
         tailwind.config = {
             theme: {
@@ -18,15 +19,6 @@
             }
         }
     </script>
-        <style>
-         .emoji-label.is-pressing {
-            transform: scale(1.25);
-            transition: transform 0.1s ease-in;
-        }
-        .emoji-label.is-pressing .number-popup { /* Make the number pop-up visible and move it slightly when pressed */
-            opacity: 1;
-            transform: translateY(-5px);
-        }
     </style>
 </head>
 <body class="bg-gray-100">
@@ -54,9 +46,8 @@
             </form>
         </div>
     </div>
-        
-    <!-- 1. We load the Google library. No 'onload' parameter. -->
+    <!-- Load the Google library. No 'onload' parameter. -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
-        <script src="js/take-survey.js"></script>
+    <script src="js/take-survey.js"></script>
 </body>
 </html>
