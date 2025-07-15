@@ -380,7 +380,7 @@
         switch (action) {
             case 'duplicate':
                 duplicateSurvey(id); // Call the duplicate function (for now we deactivated the duplicate feature)
-                return; // Stop here.
+                return;
             
             case 'archive':
                 confirmOptions = {  title: 'Archive Survey', 
