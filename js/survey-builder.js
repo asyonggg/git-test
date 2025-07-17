@@ -52,6 +52,8 @@
     let services = []; // To store service data from API
     let toastTimer; 
 
+    let previewCurrentIndex = 0;
+
     const defaultTemplate = [ // Default template questions
         {
             id: 1,
@@ -106,6 +108,14 @@
     const confirmCancelBtn = document.getElementById('confirmCancelBtn');
     const confirmationIcon = document.getElementById('confirmationIcon'); 
     
+    const previewModalEl = document.getElementById('previewModal'); //Preview Modals
+    const previewCloseBtnEl = document.getElementById('previewCloseBtn');
+    const previewProgressEl = document.getElementById('previewProgress');
+    const previewQuestionContainerEl = document.getElementById('previewQuestionContainer');
+    const previewPrevBtnEl = document.getElementById('previewPrevBtn');
+    const previewNextBtnEl = document.getElementById('previewNextBtn');
+    const previewSubmitBtnEl = document.getElementById('previewSubmitBtn');
+
     document.addEventListener('DOMContentLoaded', initializeSurveyBuilder); // Initialize the application
     
     async function initializeSurveyBuilder() {
@@ -139,7 +149,7 @@
             
             surveyQuestions = [...defaultTemplate];
             renderQuestions();
-            //renderPreview();
+            renderPreview();
         }
         setupSortable(); // Activate drag-and-drop last
     }
@@ -157,13 +167,35 @@
         document.getElementById('templateForm').addEventListener('submit', saveTemplate);
         document.getElementById('surveyOffice').addEventListener('change', handleBuilderOfficeChange); // Question type change
         
-        ['surveyTitle', 'surveyOffice', 'surveyService'].forEach(id => { // Survey info changes
-            document.getElementById(id).addEventListener('input', renderPreview);
-            document.getElementById(id).addEventListener('change', renderPreview);
-        });
         document.getElementById('previewSurvey').addEventListener('click', previewSurvey);  // Preview and save buttons
         document.getElementById('saveSurvey').addEventListener('click', () => saveSurvey('update_details'));
             document.getElementById('publishSurvey').addEventListener('click', () => saveSurvey('publish'));
+
+
+        const previewSurveyBtn = document.getElementById('previewSurvey'); //Previe Button event listener
+            if (previewSurveyBtn) {
+                previewSurveyBtn.addEventListener('click', openPreview);
+            }
+
+            if (previewCloseBtnEl) {
+                previewCloseBtnEl.addEventListener('click', closePreview);
+            }
+            if (previewPrevBtnEl) {
+                previewPrevBtnEl.addEventListener('click', () => {
+                    if (previewCurrentIndex > 0) {
+                        previewCurrentIndex--;
+                        renderPreviewQuestion();
+                    }
+                });
+            }
+            if (previewNextBtnEl) {
+                previewNextBtnEl.addEventListener('click', () => {
+                    if (previewCurrentIndex < surveyQuestions.length - 1) {
+                        previewCurrentIndex++;
+                        renderPreviewQuestion();
+                    }
+                });
+            }
     }
 
 
@@ -374,7 +406,6 @@
             showToastNotification(error.message, 'error');
         }
     }
-
         
     async function publishSurvey() {
         if (!currentSurveyId) {
@@ -439,7 +470,7 @@
                 title: modalTitle,
                 message: modalMessage,
                 actionText: modalActionText,
-                style: 'info' // Use the safe, blue style
+                style: 'info' 
             });
 
             const response = await fetch(`api/surveys.php?id=${currentSurveyId}`, {  // User clicked "Yes". Proceed to call the API.
@@ -609,7 +640,7 @@
                 surveyQuestions.splice(newIndex, 0, movedQuestion);
                 
                 renderQuestions();
-                // renderPreview();
+                renderPreview();
             }
         });
     }
@@ -641,26 +672,34 @@
     function saveQuestion(e) {
         e.preventDefault();
         
-        const questionData = {
+        const questionTitle = document.getElementById('questionTitle').value; //Get or Read the values from ALL form fields ---
+        const questionText = document.getElementById('questionText').value;
+        const helpText = document.getElementById('questionHelp').value;
+
+        if (!questionTitle || !questionText) {  // Basic validation to ensure the most important fields are not empty
+            showToastNotification("Question Title and Full Question Text are required.", "error");
+            return; // Stop the function if validation fails
+        }
+
+        const questionData = { //question Data object
             id: currentEditingQuestion || Date.now(),
             type: document.getElementById('questionType').value,
-                title: document.getElementById('questionTitle').value,
-            text: document.getElementById('questionText').value,
-            help: document.getElementById('questionHelp').value,
-            required: document.querySelector('input[name="required"]:checked').value === 'true',
-            title: document.getElementById('questionText').value.substring(0, 30) + '...'
+            title: questionTitle, //value from the 'questionTitle' input
+            text: questionText,   // value from the 'questionText' input
+            help: helpText,     // value from the 'questionHelp' input
+            required: document.querySelector('input[name="required"]:checked').value === 'true'
         };
         
-        if (currentEditingQuestion) {
+        if (currentEditingQuestion) { //Logic for updating vs. adding is correct.
             const index = surveyQuestions.findIndex(q => q.id === currentEditingQuestion);
             surveyQuestions[index] = questionData;
         } else {
             surveyQuestions.push(questionData);
         }
         
-        renderQuestions();
-        // renderPreview();
-        closeQuestionModal();
+        renderQuestions();       //Clear user feedback AFTER the save is complete // Re-render the main question list
+        closeQuestionModal();   // Close the modal window
+        showToastNotification("Question saved successfully!", "success"); 
     }
 
     function editQuestion(questionId) {
@@ -674,7 +713,7 @@
             const index = surveyQuestions.findIndex(q => q.id === questionId);
             surveyQuestions.splice(index + 1, 0, duplicated);
             renderQuestions();
-            // renderPreview();
+            renderPreview();
         }
     }
 
@@ -689,7 +728,7 @@
             console.log("User confirmed deletion. Deleting question:", questionId); // If the user clicks "Delete", the promise resolves, and the code continues here.
             surveyQuestions = surveyQuestions.filter(q => q.id !== questionId);
             renderQuestions();
-            renderPreview(); // Also update the preview
+            renderPreview();
             showToastNotification("Question deleted.", "success");
 
         } catch (error) {
@@ -706,7 +745,7 @@
             surveyQuestions = [];
         }
         renderQuestions();
-        // renderPreview();
+        renderPreview();  
     }
 
     function openTemplateModal() {
@@ -731,8 +770,85 @@
         closeTemplateModal();
     }
 
-    function previewSurvey() {  // Survey actions
-        window.open('survey-sample.php', '_blank');
+    function openPreview() {
+        if (surveyQuestions.length === 0) {
+            showToastNotification("Add at least one question to preview the survey.", "info");
+            return;
+        }
+        previewCurrentIndex = 0;
+        renderPreviewQuestion();
+        if (previewModalEl) {
+            previewModalEl.classList.remove('hidden');
+        }
+    }
+
+    function closePreview() {
+        if (previewModalEl) {
+            previewModalEl.classList.add('hidden');
+        }
+    }
+
+    function renderPreviewQuestion() {
+        const question = surveyQuestions[previewCurrentIndex];
+        if (!question) return;
+
+        // Update progress text
+        if (previewProgressEl) {
+            previewProgressEl.textContent = `Question ${previewCurrentIndex + 1} of ${surveyQuestions.length}`;
+        }
+
+        let inputHtml = '';
+        switch (question.type) {
+            case 'likert':
+                inputHtml = `
+                    <div class="flex justify-around items-center pt-8">
+                    <span class="preview-emoji" title="Excellent">😄</span>
+                     <span class="preview-emoji" title="Very Good">😊</span>
+                     <span class="preview-emoji" title="Good">😐</span>
+                      <span class="preview-emoji" title="Fair">🙁</span>
+                     <span class="preview-emoji" title="Poor">😞</span>
+                    </div>`;
+                break;
+            case 'rating':
+                inputHtml = `
+                    <div class="flex justify-center items-center pt-8">
+                        <span class="preview-star" title="Excellent">★★★★★</span>
+                        <span class="preview-star" title="Very Good">★★★★</span>
+                        <span class="preview-star" title="Good">★★★</span>
+                        <span class="preview-star" title="Poor">★★</span>
+                        <span class="preview-star" title="Fair">★</span>
+                    </div>`;
+                break;
+            case 'textarea':
+                inputHtml = `<textarea class="w-full h-32 p-2 border border-gray-300 rounded-md mt-4" placeholder="Type your response here..."></textarea>`;
+                break;
+            default:
+                inputHtml = `<p class="text-center text-gray-500 mt-8">Unsupported question type for preview.</p>`;
+        }
+
+        // Render the full question content
+        if (previewQuestionContainerEl) {
+            previewQuestionContainerEl.innerHTML = `
+                <p class="text-center text-gray-500 text-sm font-medium mb-2">${question.title || 'Question'}</p>
+                <p class="text-center text-xl text-gray-800">${question.text}</p>
+                ${inputHtml}
+            `;
+        }
+
+        // Update button visibility and state
+        if (previewPrevBtnEl) previewPrevBtnEl.disabled = (previewCurrentIndex === 0);
+        
+        if (previewNextBtnEl && previewSubmitBtnEl) {
+            if (previewCurrentIndex === surveyQuestions.length - 1) {
+                // Last question
+                previewNextBtnEl.classList.add('hidden');
+                previewSubmitBtnEl.classList.remove('hidden');
+            } else {
+                // Not the last question
+                previewNextBtnEl.classList.remove('hidden');
+                previewSubmitBtnEl.classList.add('hidden');
+            }
+        }
     }
 
 

@@ -412,8 +412,7 @@
 
         try {
             await showConfirmationModal(confirmOptions);
-            
-            const response = await fetch(`api/surveys.php?id=${id}`, {
+            const response = await fetch(`api/surveys.php?id=${id}`, { 
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action: action })

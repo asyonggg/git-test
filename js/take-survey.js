@@ -348,11 +348,11 @@
         switch (question.type) {
         case 'likert': // Emoji Scale  
         const emojis = [
-            { emoji: '😍', value: 5, label: 'Excellent' },
+            { emoji: '😄', value: 5, label: 'Excellent' },
             { emoji: '😊', value: 4, label: 'Very Good' },
             { emoji: '😐', value: 3, label: 'Good' },
-            { emoji: '😞', value: 2, label: 'Fair' },
-            { emoji: '😠', value: 1, label: 'Poor' }
+            { emoji: '🙁', value: 2, label: 'Fair' },
+            { emoji: '😞', value: 1, label: 'Poor' }
         ];
 
         content += `

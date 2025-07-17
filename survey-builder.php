@@ -6,6 +6,7 @@
     <title>Survey Builder - JRU-A-PULSE</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <script>
         tailwind.config = {
@@ -20,52 +21,6 @@
             }
         }
     </script>
-    <style>
-        .sidebar-transition {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        
-        .sidebar-collapsed {
-            width: 5rem;
-        }
-        
-        .sidebar-expanded {
-            width: 16rem;
-        }
-        
-        .menu-text {
-            transition: opacity 0.2s ease-in-out;
-        }
-        
-        .logo-transition {
-            transition: all 0.3s ease;
-        }
-        
-        .question-item {
-            transition: all 0.3s ease;
-        }
-        
-        .question-item:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-        
-        .sortable-ghost {
-            opacity: 0.4;
-        }
-        
-        .sortable-chosen {
-            transform: rotate(5deg);
-        }
-        
-        .drag-handle {
-            cursor: grab;
-        }
-        
-        .drag-handle:active {
-            cursor: grabbing;
-        }
-    </style>
 </head>
 <body class="bg-gray-50 font-sans">
     <div class="flex h-screen overflow-hidden">
@@ -454,6 +409,45 @@
         <span id="toastMessage" class="font-medium"></span>
     </div>
     </div>
+    <!-- Live Survey Preview Modal -->
+<div id="previewModal" class="fixed inset-0 bg-black bg-opacity-60 hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-gray-100 rounded-xl shadow-2xl w-full max-w-lg transform transition-all">
+        <!-- Modal Header -->
+        <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+            <h2 class="text-xl font-bold text-gray-800"><i class="fas fa-eye mr-2 text-jru-blue"></i>Live Survey Preview</h2>
+            <button id="previewCloseBtn" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times text-2xl"></i>
+            </button>
+        </div>
+        
+        <!-- Modal Body -->
+        <div class="p-6">
+            <!-- Progress Indicator -->
+            <div id="previewProgress" class="text-center text-sm font-medium text-gray-500 mb-4">
+                Question 1 of 5
+            </div>
+            
+            <!-- Question Content (dynamically populated) -->
+            <div id="previewQuestionContainer" class="bg-white p-6 rounded-lg shadow-inner min-h-[200px]">
+                <!-- Question text and input will be rendered here by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="px-6 py-4 bg-gray-200 rounded-b-xl flex justify-between items-center">
+            <button id="previewPrevBtn" class="px-6 py-2 border border-gray-400 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
+                <i class="fas fa-arrow-left mr-2"></i>Previous
+            </button>
+            <button id="previewNextBtn" class="px-6 py-2 bg-jru-blue text-white rounded-lg hover:bg-blue-800 transition-colors">
+                Next<i class="fas fa-arrow-right ml-2"></i>
+            </button>
+            <!-- The submit button will be shown on the last question -->
+            <button id="previewSubmitBtn" class="hidden px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                <i class="fas fa-check-circle mr-2"></i>Submit
+            </button>
+        </div>
+    </div>
+</div>
 
     <script src="js/survey-builder.js">  </script>
 </body>
