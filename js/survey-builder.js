@@ -98,17 +98,10 @@
     ];
 
 
-    const questionsList = document.getElementById('questionsList'); // DOM Elements (defined once globally)
-    const questionModal = document.getElementById('questionModal'); //Live Preview
-    const templateModal = document.getElementById('templateModal');
-    const confirmationModal = document.getElementById('confirmationModal');
-    const confirmTitle = document.getElementById('confirmationTitle');
-    const confirmMessage = document.getElementById('confirmationMessage');
-    const confirmActionBtn = document.getElementById('confirmActionBtn');
-    const confirmCancelBtn = document.getElementById('confirmCancelBtn');
-    const confirmationIcon = document.getElementById('confirmationIcon'); 
-    
-    const previewModalEl = document.getElementById('previewModal'); //Preview Modals
+    const questionsListEl = document.getElementById('questionsList');
+    const questionModalEl = document.getElementById('questionModal');
+    const templateModalEl = document.getElementById('templateModal');
+    const previewModalEl = document.getElementById('previewModal');
     const previewCloseBtnEl = document.getElementById('previewCloseBtn');
     const previewProgressEl = document.getElementById('previewProgress');
     const previewQuestionContainerEl = document.getElementById('previewQuestionContainer');
@@ -116,88 +109,88 @@
     const previewNextBtnEl = document.getElementById('previewNextBtn');
     const previewSubmitBtnEl = document.getElementById('previewSubmitBtn');
 
+
     document.addEventListener('DOMContentLoaded', initializeSurveyBuilder); // Initialize the application
     
     async function initializeSurveyBuilder() {
         console.log("Initializing Survey Builder...");
-
-        setupEventListeners(); // Set up all static event listeners first
-
-        await loadBuilderDropdowns(); // Load the data needed for the dropdowns
+        setupEventListeners();
+        await loadBuilderDropdowns();
+        await loadCustomTemplates();
         
         const urlParams = new URLSearchParams(window.location.search);
         const surveyIdFromUrl = urlParams.get('survey_id');
 
         if (surveyIdFromUrl) {
-            console.log("Mode: Editing Survey");  // --- EDIT MODE ---
+            console.log("Mode: Editing Existing Survey");
             currentSurveyId = surveyIdFromUrl;
             await loadSurveyForEditing(currentSurveyId);
         } else {
-            console.log("Mode: Creating New Survey"); // --- CREATE MODE ---
-            const title = urlParams.get('title'); // Handle parameters passed from the management page
+            console.log("Mode: Creating New Survey");
+            const title = urlParams.get('title');
             const officeId = urlParams.get('office_id');
             const serviceId = urlParams.get('service_id');
             
             if (title) document.getElementById('surveyTitle').value = title;
             if (officeId) {
                 document.getElementById('surveyOffice').value = officeId;
-                handleBuilderOfficeChange(); // Load the services for this office
+                await handleBuilderOfficeChange();
+                if (serviceId) {
+                    document.getElementById('surveyService').value = serviceId;
+                }
             }
-            if (serviceId) {  // This will now work because the services are loaded by the line above
-                document.getElementById('surveyService').value = serviceId;
-            }
-            
             surveyQuestions = [...defaultTemplate];
             renderQuestions();
-            renderPreview();
         }
-        setupSortable(); // Activate drag-and-drop last
+        setupSortable();
     }
 
-    function setupEventListeners() { // Setup event listeners
-        document.getElementById('addQuestion').addEventListener('click', () => openQuestionModal()); // Add question buttons
-        document.getElementById('addQuestionBottom').addEventListener('click', () => openQuestionModal());
-        document.getElementById('closeQuestionModal').addEventListener('click', () => closeQuestionModal()); // Modal close buttons
-        document.getElementById('cancelQuestion').addEventListener('click', () => closeQuestionModal());
-        document.getElementById('loadTemplate').addEventListener('click', loadTemplate); // Template actions
-        document.getElementById('saveAsTemplate').addEventListener('click', () => openTemplateModal());
-        document.getElementById('closeTemplateModal').addEventListener('click', () => closeTemplateModal());
-        document.getElementById('cancelTemplate').addEventListener('click', () => closeTemplateModal());
-        document.getElementById('questionForm').addEventListener('submit', saveQuestion); // Question form
-        document.getElementById('templateForm').addEventListener('submit', saveTemplate);
-        document.getElementById('surveyOffice').addEventListener('change', handleBuilderOfficeChange); // Question type change
+    function setupEventListeners() {
+        // Helper to keep code clean and crash-proof
+        const addListener = (id, event, handler) => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.addEventListener(event, handler);
+            }
+        };
+
+          // --- Main Survey Actions ---
+        addListener('saveSurvey', 'click', () => saveSurvey('update_details'));
+        addListener('publishSurvey', 'click', () => saveSurvey('publish'));
+        addListener('previewSurvey', 'click', openPreview);
+
+    
+        addListener('surveyTemplate', 'change', loadTemplate); 
         
-        document.getElementById('previewSurvey').addEventListener('click', previewSurvey);  // Preview and save buttons
-        document.getElementById('saveSurvey').addEventListener('click', () => saveSurvey('update_details'));
-            document.getElementById('publishSurvey').addEventListener('click', () => saveSurvey('publish'));
+    
+        addListener('saveAsTemplate', 'click', openTemplateModal); 
+        addListener('templateForm', 'submit', saveTemplate);
+        
+        addListener('addQuestion', 'click', () => openQuestionModal());
+        addListener('questionForm', 'submit', saveQuestion);
+        addListener('closeTemplateModal', 'click', closeTemplateModal);
+        addListener('cancelTemplate', 'click', closeTemplateModal);
+        addListener('closeQuestionModal', 'click', () => closeQuestionModal());
+        addListener('cancelQuestion', 'click', () => closeQuestionModal());
+    
+        // --- Live Preview Modal Buttons ---
+        addListener('previewCloseBtn', 'click', closePreview);
+        addListener('previewPrevBtn', 'click', () => {
+            if (previewCurrentIndex > 0) {
+                previewCurrentIndex--;
+                renderPreviewQuestion();
+            }
+        });
+        addListener('previewNextBtn', 'click', () => {
+            if (previewCurrentIndex < surveyQuestions.length - 1) {
+                previewCurrentIndex++;
+                renderPreviewQuestion();
+            }
+        });
 
-
-        const previewSurveyBtn = document.getElementById('previewSurvey'); //Previe Button event listener
-            if (previewSurveyBtn) {
-                previewSurveyBtn.addEventListener('click', openPreview);
-            }
-
-            if (previewCloseBtnEl) {
-                previewCloseBtnEl.addEventListener('click', closePreview);
-            }
-            if (previewPrevBtnEl) {
-                previewPrevBtnEl.addEventListener('click', () => {
-                    if (previewCurrentIndex > 0) {
-                        previewCurrentIndex--;
-                        renderPreviewQuestion();
-                    }
-                });
-            }
-            if (previewNextBtnEl) {
-                previewNextBtnEl.addEventListener('click', () => {
-                    if (previewCurrentIndex < surveyQuestions.length - 1) {
-                        previewCurrentIndex++;
-                        renderPreviewQuestion();
-                    }
-                });
-            }
+        // --- Form Inputs ---
+        addListener('surveyOffice', 'change', handleBuilderOfficeChange);
     }
-
 
     async function loadBuilderDropdowns() {
             console.log("Loading office and service dropdowns...");
@@ -736,38 +729,112 @@
         }
     }
 
-    function loadTemplate() {  // Template functions
-        const template = document.getElementById('surveyTemplate').value;
-        
-        if (template === 'standard') {
-            surveyQuestions = [...defaultTemplate];
-        } else if (template === 'blank') {
-            surveyQuestions = [];
+    async function loadTemplate() {
+        const templateSelect = document.getElementById('surveyTemplate');
+        const selectedValue = templateSelect.value;
+
+        if (!selectedValue) {
+            return;
         }
-        renderQuestions();
-        renderPreview();  
+
+        const selectedText = templateSelect.options[templateSelect.selectedIndex].text;
+
+        try {
+            await showConfirmationModal({
+                title: 'Load Template',
+                message: `Are you sure you want to load the "${selectedText}" template? This will replace all current questions.`,
+                actionText: 'Yes, Load Template'
+            });
+
+            if (selectedValue === 'standard') {
+                surveyQuestions = [...defaultTemplate];
+                renderQuestions();
+                showToastNotification("Standard Service Template loaded.", "success");
+                return; 
+            } 
+            
+            if (selectedValue === 'blank') {
+                surveyQuestions = [];
+                renderQuestions();
+                showToastNotification("Blank survey loaded.", "success");
+                return;
+            }
+
+            // This 'else' block now ONLY runs for custom templates with numeric IDs
+            const response = await fetch(`api/templates.php?id=${selectedValue}`);
+            const result = await response.json();
+            if (result.success && result.data) {
+                surveyQuestions = JSON.parse(result.data.questions_json);
+                renderQuestions();
+                showToastNotification(`Template "${result.data.template_name}" loaded.`, 'success');
+            } else {
+                throw new Error(result.message || "Template could not be found.");
+            }
+
+        } catch (error) {
+            if (error.message) {  // This block runs if the user clicks "Cancel" or if a real error occurs
+                console.error("Error loading template:", error);
+                showToastNotification(error.message, "error");
+            } else {
+                console.log("Template load was cancelled by the user.");
+            }
+        } finally {
+            templateSelect.value = "";
+        }
     }
 
-    function openTemplateModal() {
-        templateModal.classList.remove('hidden');
+
+    async function loadCustomTemplates() {
+        try {
+            const response = await fetch('api/templates.php');
+            const result = await response.json();
+            if (result.success && result.data.length > 0) {
+                const templateSelect = document.getElementById('surveyTemplate');
+                const divider = document.createElement('option');
+                divider.disabled = true;
+                divider.textContent = '--- My Saved Templates ---';
+                templateSelect.appendChild(divider);
+                result.data.forEach(template => {
+                    const option = document.createElement('option');
+                    option.value = template.id;
+                    option.textContent = template.template_name;
+                    templateSelect.appendChild(option);
+                });
+            }
+        } catch (error) { console.error("Could not load custom templates:", error); }
     }
 
-    function closeTemplateModal() {
-        templateModal.classList.add('hidden');
-    }
 
-    function saveTemplate(e) {
+       function openTemplateModal() {
+            document.getElementById('templateForm').reset();
+            document.getElementById('templateModal').classList.remove('hidden');
+        }
+        function closeTemplateModal() {
+            document.getElementById('templateModal').classList.add('hidden');
+        }
+
+    async function saveTemplate(e) {
         e.preventDefault();
-        
-        const templateData = {
-            name: document.getElementById('templateName').value,
-            description: document.getElementById('templateDescription').value,
-            category: document.getElementById('templateCategory').value,
-            questions: surveyQuestions
-        };
-        console.log('Saving template:', templateData); // Save to the bakcend
-        alert('Template saved successfully!');
-        closeTemplateModal();
+        const templateName = document.getElementById('templateName').value;
+        const templateDescription = document.getElementById('templateDescription').value;
+        if (!templateName || surveyQuestions.length === 0) {
+            showToastNotification("Template Name is required and survey cannot be empty.", "error");
+            return;
+        }
+        const templateData = { template_name: templateName, description: templateDescription, questions: surveyQuestions };
+        try {
+            const response = await fetch('api/templates.php', { method: 'POST', body: JSON.stringify(templateData), headers: { 'Content-Type': 'application/json' } });
+            const result = await response.json();
+            if (result.success) {
+                showToastNotification("Template saved successfully!", "success");
+                closeTemplateModal();
+                // Refresh dropdown
+                document.getElementById('surveyTemplate').innerHTML = '<option value="">Select a template...</option><option value="default">Standard Template</option><option value="blank">Blank Survey</option>';
+                loadCustomTemplates();
+            } else {
+                throw new Error(result.message);
+            }
+        } catch (error) { showToastNotification(error.message, "error"); }
     }
 
     function openPreview() {
@@ -792,8 +859,7 @@
         const question = surveyQuestions[previewCurrentIndex];
         if (!question) return;
 
-        // Update progress text
-        if (previewProgressEl) {
+        if (previewProgressEl) {  // Update progress text
             previewProgressEl.textContent = `Question ${previewCurrentIndex + 1} of ${surveyQuestions.length}`;
         }
 
@@ -826,8 +892,7 @@
                 inputHtml = `<p class="text-center text-gray-500 mt-8">Unsupported question type for preview.</p>`;
         }
 
-        // Render the full question content
-        if (previewQuestionContainerEl) {
+        if (previewQuestionContainerEl) { // Render the full question content
             previewQuestionContainerEl.innerHTML = `
                 <p class="text-center text-gray-500 text-sm font-medium mb-2">${question.title || 'Question'}</p>
                 <p class="text-center text-xl text-gray-800">${question.text}</p>

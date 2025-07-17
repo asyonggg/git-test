@@ -179,10 +179,14 @@ ALTER TABLE `students`
   ADD COLUMN `first_name` VARCHAR(100) NOT NULL AFTER `student_number`,
   ADD COLUMN `last_name` VARCHAR(100) NOT NULL AFTER `first_name`;
 
-  INSERT INTO `students` (student_number, first_name, last_name, email, division, course_or_strand) 
+INSERT INTO `students` (student_number, first_name, last_name, email, division, course_or_strand) 
 VALUES 
 ('23-261655', 'Lyle', 'Earl', 'lyleearl.rementizo@my.jru.edu', 'College', 'BSIT');
 
-INSERT INTO `students` (student_number, full_name, email, division, course_or_strand) VALUES
-('25-123456', 'Juan Dela Cruz', 'juan.delacruz@my.jru.edu', 'College', 'BSIT'),
-('25-654321', 'Maria Clara', 'maria.clara@my.jru.edu', 'SHS', 'ABM');
+CREATE TABLE survey_templates (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    template_name VARCHAR(255) NOT NULL,
+    description TEXT,
+    questions_json JSON NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

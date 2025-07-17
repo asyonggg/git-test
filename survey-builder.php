@@ -118,16 +118,20 @@
                         <h1 class="text-2xl font-bold text-gray-900">Survey Builder</h1>
                         <p class="text-sm text-gray-600 mt-1">Create and customize surveys with templates</p>
                     </div>
-                    <div class="flex items-center space-x-4">
-                        <button id="previewSurvey" class="border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors flex items-center">
+                    <<div class="flex items-center space-x-4">
+                        <button id="saveAsTemplate" class="border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 flex items-center">
+                            <i class="fas fa-copy mr-2"></i> <!-- NEW ICON -->
+                            Save as Template
+                        </button>
+                        <button id="previewSurvey" class="border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 flex items-center">
                             <i class="fas fa-eye mr-2"></i>
                             Preview
                         </button>
-                        <button id="saveSurvey" class="border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors flex items-center">
-                            <i class="fas fa-save mr-2"></i>
-                            Save
+                        <button id="saveSurvey" class="border border-jru-blue text-jru-blue px-4 py-2 rounded-lg hover:bg-gray-50 flex items-center">
+                            <i class="fas fa-save mr-2"></i> <!-- Standard Save Icon -->
+                            Save Draft
                         </button>
-                        <button id="publishSurvey" class="bg-jru-blue text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors flex items-center">
+                        <button id="publishSurvey" class="bg-jru-blue text-white px-4 py-2 rounded-lg hover:bg-blue-800 flex items-center">
                             <i class="fas fa-rocket mr-2"></i>
                             Publish Survey
                         </button>
@@ -170,7 +174,6 @@
                                     <label class="block text-sm font-medium text-gray-700 mb-2">Template</label>
                                     <select id="surveyTemplate" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-jru-blue">
                                         <option value="standard" selected>Standard Service Template</option>
-                                        <option value="it-specific">IT Services Template</option>
                                         <option value="custom">Custom Template</option>
                                         <option value="blank">Start from Blank</option>
                                     </select>
@@ -178,23 +181,7 @@
                             </div>
                         </div>
 
-                        <!-- Template Actions -->
-                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-                            <div class="flex items-center justify-between mb-4">
-                                <h3 class="text-lg font-semibold text-gray-900">Template Actions</h3>
-                                <div class="flex space-x-2">
-                                    <button id="loadTemplate" class="bg-blue-100 text-blue-800 px-3 py-1 rounded-lg text-sm hover:bg-blue-200 transition-colors">
-                                        <i class="fas fa-download mr-1"></i>
-                                        Load Template
-                                    </button>
-                                    <button id="saveAsTemplate" class="bg-green-100 text-green-800 px-3 py-1 rounded-lg text-sm hover:bg-green-200 transition-colors">
-                                        <i class="fas fa-save mr-1"></i>
-                                        Save as Template
-                                    </button>
-                                </div>
-                            </div>
-                            <p class="text-sm text-gray-600">Load a template to start with predefined questions, or save your current survey as a template for future use.</p>
-                        </div>
+                       
 
                         <!-- Questions Builder -->
                         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
@@ -322,48 +309,26 @@
     </div>
 
     <!-- Template Modal -->
-    <div id="templateModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+        <div id="templateModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
         <div class="flex items-center justify-center min-h-screen p-4">
-            <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full">
-                <div class="p-6 border-b border-gray-200">
-                    <div class="flex items-center justify-between">
-                        <h2 class="text-xl font-bold text-gray-900">Save as Template</h2>
-                        <button id="closeTemplateModal" class="text-gray-400 hover:text-gray-600">
-                            <i class="fas fa-times text-xl"></i>
-                        </button>
-                    </div>
+            <div class="bg-white rounded-xl shadow-xl max-w-lg w-full">
+                <div class="p-6 border-b border-gray-200 flex justify-between items-center">
+                    <h2 class="text-xl font-bold text-gray-900">Save as New Template</h2>
+                    <button id="closeTemplateModal" class="text-gray-400 hover:text-gray-600">×</button>
                 </div>
-                
                 <div class="p-6">
                     <form id="templateForm">
                         <div class="mb-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Template Name</label>
-                            <input type="text" id="templateName" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-jru-blue" placeholder="Enter template name">
+                            <label for="templateName" class="block text-sm font-medium text-gray-700 mb-2">Template Name <span class="text-red-500">*</span></label>
+                            <input type="text" id="templateName" class="w-full px-4 py-2 border border-gray-300 rounded-lg" required>
                         </div>
-                        
-                        <div class="mb-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                            <textarea id="templateDescription" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-jru-blue" placeholder="Describe when to use this template..."></textarea>
-                        </div>
-                        
                         <div class="mb-6">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Category</label>
-                            <select id="templateCategory" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-jru-blue">
-                                <option value="general">General Services</option>
-                                <option value="it">IT Services</option>
-                                <option value="academic">Academic Services</option>
-                                <option value="administrative">Administrative Services</option>
-                                <option value="custom">Custom</option>
-                            </select>
+                            <label for="templateDescription" class="block text-sm font-medium text-gray-700 mb-2">Description (Optional)</label>
+                            <textarea id="templateDescription" rows="2" class="w-full px-4 py-2 border border-gray-300 rounded-lg"></textarea>
                         </div>
-                        
                         <div class="flex justify-end space-x-4">
-                            <button type="button" id="cancelTemplate" class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
-                                Cancel
-                            </button>
-                            <button type="submit" class="px-6 py-2 bg-jru-blue text-white rounded-lg hover:bg-blue-800 transition-colors">
-                                Save Template
-                            </button>
+                            <button type="button" id="cancelTemplate" class="px-6 py-2 border rounded-lg">Cancel</button>
+                            <button type="submit" class="px-6 py-2 bg-jru-blue text-white rounded-lg">Save Template</button>
                         </div>
                     </form>
                 </div>
