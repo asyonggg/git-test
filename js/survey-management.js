@@ -1183,10 +1183,21 @@
         }
 
         function updateStatistics() {
+
+            if(!Array.isArray(surveys)){
+                return;
+            }
+
+             // We use parseInt() to ensure each response_count is treated as a number. The '10' is the radix, which is a best practice to ensure base-10 conversion.
+            const totalResponses = surveys.reduce((sum, survey) => {
+                const count = parseInt(survey.response_count, 10) || 0;
+                return sum + count;
+            }, 0);
+
             document.getElementById('totalSurveys').textContent = surveys.length;
             document.getElementById('activeSurveys').textContent = surveys.filter(s => s.status === 'active').length;
             document.getElementById('draftSurveys').textContent = surveys.filter(s => s.status === 'draft').length;
-            document.getElementById('totalResponses').textContent = surveys.reduce((sum, s) => sum + (s.response_count || 0), 0);
+            document.getElementById('totalResponses').textContent= totalResponses;
         }
 
         function getStatusClass(status) {

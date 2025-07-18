@@ -712,7 +712,7 @@
 
     async function deleteQuestion(questionId) {
         try {
-            await showConfirmationModal({ // We 'await' the result of our modal function. The code will PAUSE here until the user clicks one of the buttons.
+            await showConfirmationModal({ // 'await' the result of our modal function. The code will PAUSE here until the user clicks one of the buttons.
                 title: 'Delete Question',
                 message: 'Are you sure you want to remove this question from the survey?',
                 actionText: 'Delete' // This will be the text on the red button
@@ -772,7 +772,7 @@
             }
 
         } catch (error) {
-            if (error.message) {  // This block runs if the user clicks "Cancel" or if a real error occurs
+            if (error.message) {  // runs if the user clicks "Cancel" or if a real error occurs
                 console.error("Error loading template:", error);
                 showToastNotification(error.message, "error");
             } else {
